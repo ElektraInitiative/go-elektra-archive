@@ -1,4 +1,4 @@
-package elektra
+package kdb
 
 // #cgo LDFLAGS: -lelektra
 // #include <elektra/kdb.h>

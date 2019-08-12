@@ -1,4 +1,4 @@
-package elektra_test
+package kdb_test
 
 import (
 	"testing"

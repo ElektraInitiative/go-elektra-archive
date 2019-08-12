@@ -1,4 +1,4 @@
-package elektra
+package kdb
 
 // #include <elektra/kdb.h>
 // #include <stdlib.h>
