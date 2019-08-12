@@ -18,8 +18,8 @@ import "C"
 
 import (
 	"fmt"
-	"unsafe"
 	"runtime"
+	"unsafe"
 
 	"github.com/pkg/errors"
 )
@@ -126,7 +126,7 @@ func (k *ckey) Boolean() bool {
 
 // SetBytes sets the value of a key to a byte slice.
 func (k *ckey) SetBytes(value []byte) error {
-	v := C.CString(string(value))
+	v := C.CBytes(value)
 	defer C.free(unsafe.Pointer(v))
 
 	size := C.ulong(len(value))
@@ -172,11 +172,16 @@ func (k *ckey) SetName(name string) error {
 
 // Bytes returns the value of the Key as a byte slice.
 func (k *ckey) Bytes() []byte {
-	ptr := (*C.char)(C.keyValue(k.key))
+	size := (C.ulong)(C.keyGetValueSize(k.key))
 
-	v := C.GoString(ptr)
+	buffer := unsafe.Pointer((*C.char)(C.malloc(size)))
+	defer C.free(buffer)
 
-	return []byte(v)
+	C.keyGetBinary(k.key, buffer, C.ulong(size))
+
+	bytes := C.GoBytes(buffer, C.int(size))
+
+	return bytes
 }
 
 // Value returns the string value of the Key.
@@ -185,7 +190,6 @@ func (k *ckey) Value() string {
 
 	return C.GoString(str)
 }
-
 
 // String returns the string representation of the Key
 // in "Key: Value" format.
@@ -197,7 +201,7 @@ func (k *ckey) String() string {
 		value = "(empty)"
 	}
 
-	return fmt.Sprintf("%s: %s", name, value) 
+	return fmt.Sprintf("%s: %s", name, value)
 }
 
 // SetMeta sets the meta value of a Key.

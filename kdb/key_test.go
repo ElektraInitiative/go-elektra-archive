@@ -62,7 +62,7 @@ func TestBoolean(t *testing.T) {
 }
 
 func TestBytes(t *testing.T) {
-	k, err := elektra.CreateKey("user/hello_world")
+	k, err := elektra.CreateKey("hello_bytes")
 
 	Check(t, err, "could not create key")
 
