@@ -2,16 +2,31 @@ package kdb
 
 // #include <elektra/kdb.h>
 // #include <stdlib.h>
+//
+// static Key * keyNewEmptyWrapper() {
+//   return keyNew(0);
+// }
+//
+// static Key * keyNewWrapper(char* k) {
+//   return keyNew(k, KEY_END);
+// }
+//
+// static Key * keyNewValueWrapper(char* k, char* v) {
+//   return keyNew(k, KEY_VALUE, v, KEY_END);
+// }
 import "C"
 
 import (
 	"fmt"
 	"unsafe"
+	"runtime"
 
 	"github.com/pkg/errors"
 )
 
 type Key interface {
+	// Duplicate() Key
+
 	BaseName() string
 	Name() string
 	Value() string
@@ -24,16 +39,45 @@ type Key interface {
 	SetBoolean(value bool) error
 	SetString(value string) error
 	SetBytes(value []byte) error
-
-	Free()
 }
 
 type ckey struct {
 	key *C.struct__Key
 }
 
+// CreateKey creates a new key with an optional value.
+func CreateKey(name string, value ...interface{}) (Key, error) {
+	var key *ckey
+
+	n := C.CString(name)
+	defer C.free(unsafe.Pointer(n))
+
+	if name == "" {
+		key = newKey(C.keyNewEmptyWrapper())
+	} else if len(value) > 0 {
+		switch v := value[0].(type) {
+		case string:
+			cValue := C.CString(v)
+			key = newKey(C.keyNewValueWrapper(n, cValue))
+			defer C.free(unsafe.Pointer(cValue))
+		default:
+			return nil, errors.New("unsupported key value type")
+		}
+	} else {
+		key = newKey(C.keyNewWrapper(n))
+	}
+
+	if key.key == nil {
+		return nil, errors.New("could not create key")
+	}
+
+	runtime.SetFinalizer(key, freeKey)
+
+	return key, nil
+}
+
 func freeKey(k *ckey) {
-	k.Free()
+	k.free()
 }
 
 func newKey(k *C.struct__Key) *ckey {
@@ -68,8 +112,8 @@ func (k *ckey) Name() string {
 	return C.GoString(name)
 }
 
-// Free frees the resources of the Key.
-func (k *ckey) Free() {
+// free frees the resources of the Key.
+func (k *ckey) free() {
 	if !k.isNil() {
 		C.keyDel(k.key)
 	}

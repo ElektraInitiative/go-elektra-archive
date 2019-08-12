@@ -2,29 +2,10 @@ package kdb
 
 // #cgo LDFLAGS: -lelektra
 // #include <elektra/kdb.h>
-// #include <stdlib.h>
-//
-// static Key * keyNewEmptyWrapper() {
-//   return keyNew(0);
-// }
-//
-// static Key * keyNewWrapper(char* k) {
-//   return keyNew(k, KEY_END);
-// }
-//
-// static Key * keyNewValueWrapper(char* k, char* v) {
-//   return keyNew(k, KEY_VALUE, v, KEY_END);
-// }
-//
-// static KeySet * ksNewWrapper(size_t size) {
-// 	 return ksNew(size, KEY_END);
-// }
 import "C"
 
 import (
 	"fmt"
-	"runtime"
-	"unsafe"
 
 	"github.com/pkg/errors"
 )
@@ -34,11 +15,10 @@ type KDB interface {
 	Open(key Key) error
 	Close(key Key) error
 
-	CreateKey(name string, valueAndMeta ...interface{}) (Key, error)
-	CreateKeySet(keys ...Key) (KeySet, error)
-
 	Get(keySet KeySet, parentKey Key) error
 	Set(keySet KeySet, parentKey Key) error
+
+	// Ensure(contract KeySet, parentKey Key)
 
 	Version() (string, error)
 }
@@ -89,57 +69,6 @@ func (e *kdbC) Close(key Key) error {
 	return nil
 }
 
-// CreateKey creates a new key with an optional value.
-func (e *kdbC) CreateKey(name string, value ...interface{}) (Key, error) {
-	var key *ckey
-
-	n := C.CString(name)
-	defer C.free(unsafe.Pointer(n))
-
-	if name == "" {
-		key = newKey(C.keyNewEmptyWrapper())
-	} else if len(value) > 0 {
-		switch v := value[0].(type) {
-		case string:
-			cValue := C.CString(v)
-			key = newKey(C.keyNewValueWrapper(n, cValue))
-			defer C.free(unsafe.Pointer(cValue))
-		default:
-			return nil, errors.New("unsupported key value type")
-		}
-	} else {
-		key = newKey(C.keyNewWrapper(n))
-	}
-
-	if key.key == nil {
-		return nil, errors.New("could not create key")
-	}
-
-	runtime.SetFinalizer(key, freeKey)
-
-	return key, nil
-}
-
-// CreateKeySet creates a new KeySet.
-func (e *kdbC) CreateKeySet(keys ...Key) (KeySet, error) {
-	size := len(keys)
-	ks := &ckeySet{C.ksNewWrapper(C.ulong(size))}
-
-	if ks.keySet == nil {
-		return nil, errors.New("could not create keyset")
-	}
-
-	runtime.SetFinalizer(ks, freeKeySet)
-
-	for _, k := range keys {
-		if err := ks.AppendKey(k); err != nil {
-			return nil, err
-		}
-	}
-
-	return ks, nil
-}
-
 // Get retrieves parentKey and all Keys beneath it.
 func (e *kdbC) Get(keySet KeySet, parentKey Key) error {
 	cKey, err := toCKey(parentKey)
@@ -179,14 +108,13 @@ func (e *kdbC) Set(keySet KeySet, parentKey Key) error {
 }
 
 func (e *kdbC) Version() (string, error) {
-
-	k, err := e.CreateKey("system/elektra/version")
+	k, err := CreateKey("system/elektra/version")
 
 	if err != nil {
 		return "", err
 	}
 
-	ks, err := e.CreateKeySet()
+	ks, err := CreateKeySet()
 
 	if err != nil {
 		return "", err

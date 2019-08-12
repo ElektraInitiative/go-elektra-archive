@@ -3,10 +3,15 @@ package kdb
 // #cgo LDFLAGS: -lelektra
 // #include <elektra/kdb.h>
 // #include <stdlib.h>
+//
+// static KeySet * ksNewWrapper(size_t size) {
+// 	 return ksNew(size, KEY_END);
+// }
 import "C"
 
 import (
 	"unsafe"
+	"runtime"
 
 	"github.com/pkg/errors"
 )
@@ -38,6 +43,26 @@ type KeySet interface {
 
 type ckeySet struct {
 	keySet *C.struct__KeySet
+}
+
+// CreateKeySet creates a new KeySet.
+func CreateKeySet(keys ...Key) (KeySet, error) {
+	size := len(keys)
+	ks := &ckeySet{C.ksNewWrapper(C.ulong(size))}
+
+	if ks.keySet == nil {
+		return nil, errors.New("could not create keyset")
+	}
+
+	runtime.SetFinalizer(ks, freeKeySet)
+
+	for _, k := range keys {
+		if err := ks.AppendKey(k); err != nil {
+			return nil, err
+		}
+	}
+
+	return ks, nil
 }
 
 func toCKeySet(keySet KeySet) (*ckeySet, error) {

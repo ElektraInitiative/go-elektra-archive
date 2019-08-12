@@ -5,16 +5,15 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/ElektraInitiative/go-elektra"
+	elektra "github.com/ElektraInitiative/go-elektra/kdb"
+	. "github.com/ElektraInitiative/go-elektra/test"
 )
 
 func TestName(t *testing.T) {
-	kdb := elektra.New()
-
 	firstName := "user/hello_world"
 	secondName := "user/hello_world2"
 
-	k, err := kdb.CreateKey(firstName)
+	k, err := elektra.CreateKey(firstName)
 
 	Check(t, err, "could not create key")
 	Assert(t, k.Name() == firstName, "wrong key name")
@@ -26,10 +25,8 @@ func TestName(t *testing.T) {
 }
 
 func TestString(t *testing.T) {
-	kdb := elektra.New()
-
 	testValue := "Hello World"
-	k, err := kdb.CreateKey("user/hello_world", testValue)
+	k, err := elektra.CreateKey("user/hello_world", testValue)
 
 	Check(t, err, "could not create key")
 
@@ -39,9 +36,7 @@ func TestString(t *testing.T) {
 }
 
 func TestBoolean(t *testing.T) {
-	kdb := elektra.New()
-
-	k, err := kdb.CreateKey("user/hello_world")
+	k, err := elektra.CreateKey("user/hello_world")
 
 	Check(t, err, "could not create key")
 
@@ -67,9 +62,7 @@ func TestBoolean(t *testing.T) {
 }
 
 func TestBytes(t *testing.T) {
-	kdb := elektra.New()
-
-	k, err := kdb.CreateKey("user/hello_world")
+	k, err := elektra.CreateKey("user/hello_world")
 
 	Check(t, err, "could not create key")
 
@@ -82,13 +75,11 @@ func TestBytes(t *testing.T) {
 
 	val := k.Bytes()
 
-	Assertf(t, bytes.Compare(val, testValue) == 0, "Key.Bytes() %q did not match %q", val, testValue)
+	Assertf(t, bytes.Compare(val, testValue) == 0, "Key.Bytes() %X did not match %X", val, testValue)
 }
 
 func TestMeta(t *testing.T) {
-	kdb := elektra.New()
-
-	k, err := kdb.CreateKey("user/hello_world", "Hello World")
+	k, err := elektra.CreateKey("user/hello_world", "Hello World")
 
 	Check(t, err, "could not create key")
 

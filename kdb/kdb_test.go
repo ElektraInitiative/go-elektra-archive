@@ -3,13 +3,14 @@ package kdb_test
 import (
 	"testing"
 
-	"github.com/ElektraInitiative/go-elektra"
+	elektra "github.com/ElektraInitiative/go-elektra/kdb"
+	. "github.com/ElektraInitiative/go-elektra/test"
 )
 
 func TestOpen(t *testing.T) {
 	kdb := elektra.New()
 
-	k, _ := kdb.CreateKey("Test", "Value")
+	k, _ := elektra.CreateKey("Test", "Value")
 
 	err := kdb.Open(k)
 
@@ -19,13 +20,13 @@ func TestOpen(t *testing.T) {
 func TestSet(t *testing.T) {
 	kdb := elektra.New()
 
-	parent, _ := kdb.CreateKey("/bla")
+	parent, _ := elektra.CreateKey("/bla")
 	err := kdb.Open(parent)
 
 	Checkf(t, err, "kdb.Open() failed: %v", err)
 
-	key, _ := kdb.CreateKey("/bla/bla2")
-	ks, _ := kdb.CreateKeySet(key)
+	key, _ := elektra.CreateKey("/bla/bla2")
+	ks, _ := elektra.CreateKeySet(key)
 
 	Assert(t, ks.Len() == 1, "KeySet.Len() should be 1")
 
@@ -39,12 +40,12 @@ func TestGet(t *testing.T) {
 
 	kdb := elektra.New()
 
-	key, _ := kdb.CreateKey("/bla")
+	key, _ := elektra.CreateKey("/bla")
 	err := kdb.Open(key)
 
 	Checkf(t, err, "kdb.Open() failed: %v", err)
 
-	ks, _ := kdb.CreateKeySet()
+	ks, _ := elektra.CreateKeySet()
 
 	err = kdb.Get(ks, key)
 
@@ -62,7 +63,7 @@ func TestGet(t *testing.T) {
 func TestVersion(t *testing.T) {
 	kdb := elektra.New()
 
-	key, _ := kdb.CreateKey("/bla")
+	key, _ := elektra.CreateKey("/bla")
 	err := kdb.Open(key)
 
 	version, err := kdb.Version()

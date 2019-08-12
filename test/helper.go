@@ -1,4 +1,4 @@
-package kdb_test
+package test
 
 import (
 	"testing"

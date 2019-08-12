@@ -3,13 +3,14 @@ package kdb_test
 import (
 	"testing"
 
-	"github.com/ElektraInitiative/go-elektra"
+	elektra "github.com/ElektraInitiative/go-elektra/kdb"
+	. "github.com/ElektraInitiative/go-elektra/test"
 )
 
 func TestCreateKeySet(t *testing.T) {
 	kdb := elektra.New()
 
-	k, err := kdb.CreateKey("user/hello_world", "Hello World")
+	k, err := elektra.CreateKey("user/hello_world", "Hello World")
 
 	Check(t, err, "could not create Key")
 
@@ -17,7 +18,7 @@ func TestCreateKeySet(t *testing.T) {
 
 	Check(t, err, "could not open KDB")
 
-	ks, err := kdb.CreateKeySet(k)
+	ks, err := elektra.CreateKeySet(k)
 
 	Check(t, err, "could not create KeySet")
 	Assert(t, ks.Len() == 1, "KeySet should have len 1")
@@ -26,7 +27,7 @@ func TestCreateKeySet(t *testing.T) {
 func TestAddAndRemoveFromKeySet(t *testing.T) {
 	kdb := elektra.New()
 
-	k, err := kdb.CreateKey("user/hello_world", "Hello World")
+	k, err := elektra.CreateKey("user/hello_world", "Hello World")
 
 	Check(t, err, "could not create Key")
 
@@ -34,7 +35,7 @@ func TestAddAndRemoveFromKeySet(t *testing.T) {
 
 	Check(t, err, "could not open KDB")
 
-	ks, err := kdb.CreateKeySet()
+	ks, err := elektra.CreateKeySet()
 
 	Check(t, err, "could not create KeySet")
 
@@ -43,7 +44,7 @@ func TestAddAndRemoveFromKeySet(t *testing.T) {
 	Check(t, err, "could not append to KeySet")
 	Assert(t, ks.Len() == 1, "KeySet should have len 1")
 
-	k2, err := kdb.CreateKey("user/hello_world_2", "Hello World")
+	k2, err := elektra.CreateKey("user/hello_world_2", "Hello World")
 	Check(t, err, "could not create Key")
 
 	err = ks.AppendKey(k2)
@@ -61,19 +62,19 @@ func TestRemoveKey(t *testing.T) {
 	kdb := elektra.New()
 	namespace := "user/test"
 
-	parentKey, err := kdb.CreateKey(namespace)
+	parentKey, err := elektra.CreateKey(namespace)
 	Check(t, err, "could not create parent Key")
 
 	err = kdb.Open(parentKey)
 	Check(t, err, "could not open KDB")
 
-	k, err := kdb.CreateKey(namespace+"/hello_world", "Hello World")
+	k, err := elektra.CreateKey(namespace+"/hello_world", "Hello World")
 	Check(t, err, "could not create Key")
 
-	k2, err := kdb.CreateKey(namespace+"/hello_world_2", "Hello World 2")
+	k2, err := elektra.CreateKey(namespace+"/hello_world_2", "Hello World 2")
 	Check(t, err, "could not create Key")
 
-	ks, err := kdb.CreateKeySet()
+	ks, err := elektra.CreateKeySet()
 	Check(t, err, "could not create KeySet")
 
 	err = kdb.Get(ks, parentKey)
@@ -114,10 +115,8 @@ func TestRemoveKey(t *testing.T) {
 }
 
 func TestClearKeySet(t *testing.T) {
-	kdb := elektra.New()
-
-	k, err := kdb.CreateKey("user/hello_world", "Hello World")
-	ks, err := kdb.CreateKeySet(k)
+	k, err := elektra.CreateKey("user/hello_world", "Hello World")
+	ks, err := elektra.CreateKeySet(k)
 
 	Check(t, err, "could not create KeySet")
 
@@ -131,12 +130,10 @@ func TestClearKeySet(t *testing.T) {
 }
 
 func TestLookupByName(t *testing.T) {
-	kdb := elektra.New()
-
 	keyName := "user/hello_world"
 
-	k, err := kdb.CreateKey(keyName, "Hello World")
-	ks, err := kdb.CreateKeySet(k)
+	k, err := elektra.CreateKey(keyName, "Hello World")
+	ks, err := elektra.CreateKeySet(k)
 
 	Check(t, err, "could not create KeySet")
 
