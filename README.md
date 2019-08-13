@@ -2,6 +2,12 @@
 
 This repository contains the low level ("kdb" subpackage) and high level (root package, TODO) go bindings for the elektra library.
 
+# Prerequisites
+
+Set your `PKG_CONFIG_PATH` environment variable to where your elektra.pc files are located (if at a nonstandard location).
+
+E.g.: `PKG_CONFIG_PATH=/usr/local/lib/pkgconfig`.
+
 ## Execute tests
 Prerequisite: you have to have KDB and go installed on your machine.
 

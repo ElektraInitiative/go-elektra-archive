@@ -1,6 +1,6 @@
 package kdb
 
-// #include <elektra/kdb.h>
+// #include <kdb.h>
 // #include <stdlib.h>
 //
 // static Key * keyNewEmptyWrapper() {

@@ -1,7 +1,6 @@
 package kdb
 
-// #cgo LDFLAGS: -lelektra
-// #include <elektra/kdb.h>
+// #include <kdb.h>
 // #include <stdlib.h>
 //
 // static KeySet * ksNewWrapper(size_t size) {
@@ -10,8 +9,8 @@ package kdb
 import "C"
 
 import (
-	"unsafe"
 	"runtime"
+	"unsafe"
 
 	"github.com/pkg/errors"
 )
@@ -109,8 +108,8 @@ func (ks *ckeySet) Cut(key Key) KeySet {
 	if err != nil {
 		return nil
 	}
-	
-	newKs := C.ksCut(ks.keySet, k.key)	
+
+	newKs := C.ksCut(ks.keySet, k.key)
 
 	return &ckeySet{newKs}
 }
@@ -168,10 +167,10 @@ func (ks *ckeySet) Remove(key Key) error {
 		return err
 	}
 
-	removed := C.ksLookup(ks.keySet, ckey.key, C.KDB_O_POP);
+	removed := C.ksLookup(ks.keySet, ckey.key, C.KDB_O_POP)
 
 	if removed == nil {
-		return errors.New("not found")		
+		return errors.New("not found")
 	}
 
 	return nil

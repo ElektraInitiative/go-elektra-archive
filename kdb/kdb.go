@@ -1,7 +1,7 @@
 package kdb
 
-// #cgo LDFLAGS: -lelektra
-// #include <elektra/kdb.h>
+// #cgo pkg-config: elektra
+// #include <kdb.h>
 import "C"
 
 import (
@@ -32,7 +32,7 @@ func New() KDB {
 	return &kdbC{}
 }
 
-// Open creates a handle to the elektra library,
+// Open creates a handle to the kdb library,
 // this is mandatory to Get / Set Keys.
 func (e *kdbC) Open(key Key) error {
 	k, err := toCKey(key)
