@@ -1,6 +1,6 @@
-# go bindings for Elektra
+# Go Bindings for Elektra
 
-This repository contains the low level ("kdb" subpackage) and high level (root package, TODO) go bindings for the elektra library.
+This repository contains the low-level ("kdb" subpackage) and high-level (root package) Go bindings for the Elektra library.
 
 # Prerequisites
 
@@ -8,8 +8,9 @@ Set your `PKG_CONFIG_PATH` environment variable to where your elektra.pc files a
 
 E.g.: `PKG_CONFIG_PATH=/usr/local/lib/pkgconfig`.
 
-## Execute tests
-Prerequisite: you have to have KDB and go installed on your machine.
+## Execute Tests
+
+Prerequisite: you have to have KDB and Go installed on your machine.
 
 Execute all tests:
 `go test ./...`
@@ -17,8 +18,9 @@ Execute all tests:
 Execute tests of a package, e.g. kdb:
 `go test ./kdb`
 
-## Use Elektra in your application
-Just *go get* it like you are used to with go.
+## Use Elektra in your Application
+
+Just _go get_ it like you are used to with Go.
 
 `go get github.com/ElektraInitiative/go-elektra`
 
@@ -36,9 +38,9 @@ func main() {
     handle := kdb.New()
 	_ = handle.Open(parentKey)
     _ = handle.Get(ks, parentKey)
-    
+
     foundKey := ks.LookupByName("/test/hello_world")
-    
+
     value := foundKey.Value()
 
     // do something with the value

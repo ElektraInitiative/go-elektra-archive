@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// KDB is an interface to the elektra library.
+// KDB is an interface to the Elektra library.
 type KDB interface {
 	Open(key Key) error
 	Close(key Key) error
