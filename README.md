@@ -29,9 +29,14 @@ In the future we will add a vanity import.
 To use it import it in your .go file (error handling was omitted for brevity):
 
 ```go
-import "github.com/ElektraInitiative/go-elektra/kdb"
+import (
+    "fmt"
+
+    "github.com/ElektraInitiative/go-elektra/kdb"
+)
 
 func main() {
+    // PREREQUISITE: run `kdb set /test/hello_world foo` in your terminal
     parentKey, _ := kdb.CreateKey("user/test")
 	ks, _ := kdb.CreateKeySet()
 
@@ -43,6 +48,6 @@ func main() {
 
     value := foundKey.Value()
 
-    // do something with the value
+    fmt.Print(value)
 }
 ```
