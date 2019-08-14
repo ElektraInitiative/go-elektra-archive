@@ -1,8 +1,16 @@
 package elektra
 
-// #cgo pkg-config: elektra-highlevel
-// #include <elektra.h>
-// #include <stdlib.h>
+/*
+#cgo pkg-config: elektra-highlevel
+#include <elektra.h>
+#include <stdlib.h>
+
+void err_callback(ElektraError *err);
+
+static void _register_callback(Elektra * elektra) {
+	elektraFatalErrorHandler(elektra, err_callback);
+}
+*/
 import "C"
 
 import (
@@ -16,7 +24,9 @@ type Elektra interface {
 	Open(string) error
 	Close()
 
+	SetValue(name, value string) error
 	Value(name string) string
+	SetLong(name string, value int64) error
 	Long(name string) int64
 }
 
@@ -30,10 +40,11 @@ func New() Elektra {
 	return &elektraC{}
 }
 
-// Open creates a handle to the elektra library,
+
+// Open creates a handle to the Elektra library,
 // this is mandatory to Get / Set Keys.
-func (e *elektraC) Open(namespace string) error {
-	n := C.CString(namespace)
+func (e *elektraC) Open(application string) error {
+	n := C.CString(application)
 	defer C.free(unsafe.Pointer(n))
 
 	e.handle = C.elektraOpen(n, nil, &e.err)
@@ -42,15 +53,16 @@ func (e *elektraC) Open(namespace string) error {
 		return err
 	}
 
-	C.elektraFatalErrorHandler(e.handle, errCallback)
+	C._register_callback(e.handle)
 
 	return nil
 }
 
-func errCallback(err *C.struct__ElektraError) {
+//export err_callback
+func err_callback(err *C.struct__ElektraError) {
 	errDescription := C.GoString(C.elektraErrorDescription(err))
 
-	fmt.Printf(errDescription)
+	fmt.Printf("elektra err: %s", errDescription)
 }
 
 func (e *elektraC) lastError() error {
@@ -70,6 +82,17 @@ func (e *elektraC) Close() {
 	C.elektraClose(e.handle)
 }
 
+func (e *elektraC) SetValue(name, value string) error {
+	n := C.CString(name)
+	defer C.free(unsafe.Pointer(n))
+	v := C.CString(value)
+	defer C.free(unsafe.Pointer(v))
+
+	C.elektraSetString(e.handle, n, v, &e.err)
+
+	return e.lastError()
+}
+
 func (e *elektraC) Value(name string) string {
 	n := C.CString(name)
 	defer C.free(unsafe.Pointer(n))
@@ -77,6 +100,15 @@ func (e *elektraC) Value(name string) string {
 	val := C.elektraGetString(e.handle, n)
 
 	return C.GoString(val)
+}
+
+func (e *elektraC) SetLong(name string, value int64) error {
+	n := C.CString(name)
+	defer C.free(unsafe.Pointer(n))
+
+	C.elektraSetLong(e.handle, n, C.int(value), &e.err)
+
+	return e.lastError()
 }
 
 func (e *elektraC) Long(name string) int64 {

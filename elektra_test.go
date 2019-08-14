@@ -9,14 +9,17 @@ import (
 
 func TestElektraOpen(t *testing.T) {
 	handle := elektra.New()
-	err := handle.Open("/sw/org/myapp/#0/current")
+	err := handle.Open("user/go-binding/test")
 
 	Check(t, err, "could not open elektra instance")
 }
 
 func TestLong(t *testing.T) {
 	handle := elektra.New()
-	_ = handle.Open("/sw/org/myapp/#0/current")
+	_ = handle.Open("user/go-binding/test")
+
+	err := handle.SetLong("mylong", 5)
+	Check(t, err, "elektra.SetLong() failed")
 
 	val := handle.Long("mylong")
 
@@ -25,9 +28,12 @@ func TestLong(t *testing.T) {
 
 func TestString(t *testing.T) {
 	handle := elektra.New()
-	_ = handle.Open("/sw/org/myapp/#0/current")
+	_ = handle.Open("user/go-binding/test")
 
-	val := handle.Value("mylong")
+	err := handle.SetValue("mystring", "foo")
+	Check(t, err, "elektra.SetValue() failed")
 
-	Assert(t, val == "5", "Value() should be 5")
+	val := handle.Value("mystring")
+
+	Assert(t, val == "foo", "Value() should be foo")
 }
