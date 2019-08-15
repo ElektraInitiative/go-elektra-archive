@@ -29,6 +29,8 @@ In the future we will add a vanity import.
 To use it import it in your .go file (error handling was omitted for brevity):
 
 ```go
+package main
+
 import (
     "fmt"
 
@@ -41,8 +43,8 @@ func main() {
 	ks, _ := kdb.CreateKeySet()
 
     handle := kdb.New()
-	_ = handle.Open(parentKey)
-    _ = handle.Get(ks, parentKey)
+	_, _ = handle.Open(parentKey)
+    _, _ = handle.Get(ks, parentKey)
 
     foundKey := ks.LookupByName("/test/hello_world")
 
