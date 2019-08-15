@@ -20,18 +20,19 @@ func TestOpen(t *testing.T) {
 func TestSet(t *testing.T) {
 	kdb := elektra.New()
 
-	parent, _ := elektra.CreateKey("/bla")
+	parent, _ := elektra.CreateKey("/error")
 	err := kdb.Open(parent)
 
 	Checkf(t, err, "kdb.Open() failed: %v", err)
 
-	key, _ := elektra.CreateKey("/bla/bla2")
-	ks, _ := elektra.CreateKeySet(key)
+	ks, _ := elektra.CreateKeySet()
+	key, _ := elektra.CreateKey("user/go-binding-low/test")
+	_, _ = kdb.Get(ks, key)
 
-	Assert(t, ks.Len() == 1, "KeySet.Len() should be 1")
+	err = ks.AppendKey(key)
+	Checkf(t, err, "KeySet.AppendKey() failed: %v", err)
 
-	err = kdb.Set(ks, parent)
-
+	_, err = kdb.Set(ks, parent)
 	Checkf(t, err, "kdb Set failed %v", err)
 }
 
@@ -47,9 +48,10 @@ func TestGet(t *testing.T) {
 
 	ks, _ := elektra.CreateKeySet()
 
-	err = kdb.Get(ks, key)
+	changed, err := kdb.Get(ks, key)
 
-	Checkf(t, err, "kdb.Open() failed: %v", err)
+	Assert(t, changed, "kdb.Get() has not retrieved any keys")
+	Checkf(t, err, "kdb.Get() failed: %v", err)
 
 	t.Log(ks.Len())
 

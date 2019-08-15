@@ -77,7 +77,8 @@ func TestRemoveKey(t *testing.T) {
 	ks, err := elektra.CreateKeySet()
 	Check(t, err, "could not create KeySet")
 
-	err = kdb.Get(ks, parentKey)
+	changed, err := kdb.Get(ks, parentKey)
+	Assert(t, changed, "kdb.Get() has not retrieved any keys")
 	Check(t, err, "could not Get KeySet")
 
 	err = ks.AppendKey(k)
@@ -86,10 +87,11 @@ func TestRemoveKey(t *testing.T) {
 	err = ks.AppendKey(k2)
 	Check(t, err, "could not append Key to KeySet")
 
-	err = kdb.Set(ks, parentKey)
+	changed, err = kdb.Set(ks, parentKey)
+	Assert(t, changed, "kdb.Set() has not updated any keys")
 	Check(t, err, "could not Set KeySet")
 
-	err = kdb.Get(ks, parentKey)
+	_, err = kdb.Get(ks, parentKey)
 	Check(t, err, "could not Get KeySet")
 
 	foundKey := ks.LookupByName("/test/hello_world")
@@ -101,10 +103,11 @@ func TestRemoveKey(t *testing.T) {
 	err = ks.Remove(k2)
 	Check(t, err, "could not delete Key")
 
-	err = kdb.Set(ks, parentKey)
+	changed, err = kdb.Set(ks, parentKey)
+	Assert(t, changed, "kdb.Set() has not updated any keys")
 	Check(t, err, "could not set KeySet")
 
-	err = kdb.Get(ks, parentKey)
+	_, err = kdb.Get(ks, parentKey)
 	Check(t, err, "could not Get KeySet")
 
 	foundKey, _ = ks.Lookup(k)

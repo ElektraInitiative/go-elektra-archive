@@ -13,10 +13,8 @@ type KDB interface {
 	Open(key Key) error
 	Close(key Key) error
 
-	Get(keySet KeySet, parentKey Key) error
-	Set(keySet KeySet, parentKey Key) error
-
-	// Ensure(contract KeySet, parentKey Key)
+	Get(keySet KeySet, parentKey Key) (changed bool, err error)
+	Set(keySet KeySet, parentKey Key) (changed bool, err error)
 
 	Version() (string, error)
 }
@@ -68,41 +66,41 @@ func (e *kdbC) Close(key Key) error {
 }
 
 // Get retrieves parentKey and all Keys beneath it.
-func (e *kdbC) Get(keySet KeySet, parentKey Key) error {
+func (e *kdbC) Get(keySet KeySet, parentKey Key) (bool, error) {
 	cKey, err := toCKey(parentKey)
 
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	cKeySet, err := toCKeySet(keySet)
 
 	if err != nil {
-		return err
+		return false, err
 	}
 
-	C.kdbGet(e.handle, cKeySet.keySet, cKey.key)
+	changed := C.kdbGet(e.handle, cKeySet.keySet, cKey.key)
 
-	return nil
+	return changed == 1, nil
 }
 
 // Set sets all Keys of a KeySet.
-func (e *kdbC) Set(keySet KeySet, parentKey Key) error {
+func (e *kdbC) Set(keySet KeySet, parentKey Key) (bool, error) {
 	cKey, err := toCKey(parentKey)
 
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	cKeySet, err := toCKeySet(keySet)
 
 	if err != nil {
-		return err
+		return false, err
 	}
 
-	C.kdbSet(e.handle, cKeySet.keySet, cKey.key)
+	changed := C.kdbSet(e.handle, cKeySet.keySet, cKey.key)
 
-	return nil
+	return changed == 1, nil
 }
 
 func (e *kdbC) Version() (string, error) {
@@ -118,7 +116,7 @@ func (e *kdbC) Version() (string, error) {
 		return "", err
 	}
 
-	err = e.Get(ks, k)
+	_, err = e.Get(ks, k)
 
 	versionKey := ks.LookupByName("system/elektra/version/constants/KDB_VERSION")
 	version := versionKey.Value()
