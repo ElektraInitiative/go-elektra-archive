@@ -5,8 +5,6 @@ package kdb
 import "C"
 
 import (
-	"fmt"
-
 	"github.com/pkg/errors"
 )
 
@@ -41,10 +39,10 @@ func (e *kdbC) Open(key Key) error {
 		return err
 	}
 
-	handle, ret := C.kdbOpen(k.key)
+	handle := C.kdbOpen(k.key)
 
 	if handle == nil {
-		return fmt.Errorf("unable to open kdb: %v", ret)
+		return errFromKey(k)
 	}
 
 	e.handle = handle

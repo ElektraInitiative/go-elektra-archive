@@ -45,6 +45,10 @@ type ckey struct {
 	key *C.struct__Key
 }
 
+func errFromKey(k *ckey) error {
+	return fmt.Errorf(k.Meta("error/description"))
+}
+
 // CreateKey creates a new key with an optional value.
 func CreateKey(name string, value ...interface{}) (Key, error) {
 	var key *ckey
