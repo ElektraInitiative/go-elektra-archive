@@ -9,4 +9,4 @@ addons:
     - sourceline: 'deb-src [trusted=yes] https://debian-stretch-repo.libelektra.org/ stretch main'
 before_install:
   - sudo apt-get update
-  - sudo apt-get install elektra
+  - sudo apt-get install libelektra
