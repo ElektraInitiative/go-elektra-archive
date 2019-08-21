@@ -1,0 +1,9 @@
+language: go
+go: "1.12"
+addons:
+  apt:
+    sources:
+    - sourceline: 'deb     [trusted=yes] https://debian-stretch-repo.libelektra.org/ stretch main'
+    - sourceline: 'deb-src [trusted=yes] https://debian-stretch-repo.libelektra.org/ stretch main'
+before_install:
+  - apt-get install libelektra4-all
