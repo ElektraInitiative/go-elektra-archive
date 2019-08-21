@@ -4,8 +4,9 @@ language: go
 go: "1.12"
 env:
   - GO111MODULE=on
-  # - PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
 before_install:
   - sudo apt-get update
-  - sudo apt-get install libelektra4 libelektra-dev
+  - sudo apt-get install libelektra4-all libelektra-dev
   - dpkg-query -L libelektra-dev
+install:
+  - go get -v ./...

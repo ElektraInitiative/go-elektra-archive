@@ -10,7 +10,6 @@ void err_callback(ElektraError *err);
 static void _register_callback(Elektra * elektra) {
 	elektraFatalErrorHandler(elektra, err_callback);
 }
-*/
 import "C"
 
 import (
@@ -119,3 +118,5 @@ func (e *elektraC) Long(name string) int64 {
 
 	return int64(val)
 }
+
+*/
