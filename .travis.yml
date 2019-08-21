@@ -2,11 +2,10 @@ dist: bionic
 
 language: go
 go: "1.12"
-# addons:
-#   apt:
-#     sources:
-#     - sourceline: 'deb     [trusted=yes] https://debian-stretch-repo.libelektra.org/ stretch main'
-#     - sourceline: 'deb-src [trusted=yes] https://debian-stretch-repo.libelektra.org/ stretch main'
+env:
+  - GO111MODULE=on
+  # - PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
 before_install:
   - sudo apt-get update
   - sudo apt-get install libelektra4
+  - ls /usr/lib/pkgconfig
