@@ -1,10 +1,12 @@
+dist: bionic
+
 language: go
 go: "1.12"
 addons:
   apt:
+    update: true
     sources:
     - sourceline: 'deb     [trusted=yes] https://debian-stretch-repo.libelektra.org/ stretch main'
     - sourceline: 'deb-src [trusted=yes] https://debian-stretch-repo.libelektra.org/ stretch main'
 before_install:
-  - sudo apt-get update
-  - sudo apt-get install libelektra4-curl libelektra4-crypto elektra-qt-gui libelektra4-all
+  - sudo apt-get install libelektra4-all # libelektra4-curl libelektra4-crypto elektra-qt-gui
