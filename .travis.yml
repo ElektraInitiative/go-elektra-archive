@@ -8,4 +8,4 @@ env:
 before_install:
   - sudo apt-get update
   - sudo apt-get install libelektra4
-  - ls /usr/lib/pkgconfig
+  - dpkg-query -L libelektra4
