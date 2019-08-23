@@ -25,14 +25,14 @@ import (
 )
 
 type Key interface {
-	// Duplicate() Key
-
 	BaseName() string
 	Name() string
 	Value() string
 	Boolean() bool
 	Bytes() []byte
 	Meta(name string) string
+
+	DeleteMeta(name) error	
 
 	SetMeta(name, value string) error
 	SetName(name string) error
@@ -219,6 +219,21 @@ func (k *ckey) SetMeta(name, value string) error {
 
 	if ret < 0 {
 		return errors.New("could not set meta")
+	}
+
+	return nil
+}
+
+// DeleteMeta deletes a meta Key.
+func (k *ckey) DeleteMeta(name) error {
+	cName := C.CString(name)
+
+	defer C.free(unsafe.Pointer(cName))
+
+	ret := C.keySetMeta(k.key, cName, nil)
+
+	if ret < 0 {
+		return errors.New("could not delete meta")
 	}
 
 	return nil
