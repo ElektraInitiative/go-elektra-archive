@@ -39,7 +39,7 @@ type Key interface {
 	DeleteMeta(name string) error
 
 	IsBelowOrSame(key Key) bool
-	// Duplicate() Key
+	Duplicate() Key
 
 	SetMeta(name, value string) error
 	SetName(name string) error
@@ -78,11 +78,9 @@ func CreateKey(name string, value ...interface{}) (Key, error) {
 		key = newKey(C.keyNewWrapper(n))
 	}
 
-	if key.key == nil {
+	if key == nil {
 		return nil, errors.New("could not create key")
 	}
-
-	runtime.SetFinalizer(key, freeKey)
 
 	return key, nil
 }
@@ -92,7 +90,15 @@ func freeKey(k *ckey) {
 }
 
 func newKey(k *C.struct__Key) *ckey {
-	return &ckey{k}
+	if k == nil {
+		return nil
+	}
+
+	key := &ckey{k}
+
+	runtime.SetFinalizer(key, freeKey)
+
+	return key
 }
 
 func toCKey(key Key) (*ckey, error) {
@@ -125,7 +131,7 @@ func (k *ckey) Name() string {
 
 // free frees the resources of the Key.
 func (k *ckey) free() {
-	if !k.isNil() {
+	if k.key != nil {
 		C.keyDel(k.key)
 	}
 }
@@ -254,20 +260,16 @@ func (k *ckey) Meta(name string) string {
 
 	metaKey := newKey(C.keyGetMeta(k.key, cName))
 
-	if metaKey.isNil() {
+	if metaKey == nil {
 		return ""
 	}
 
 	return metaKey.Value()
 }
 
-func (k *ckey) isNil() bool {
-	return k.key == nil
+func (k *ckey) Duplicate() Key {
+	return newKey(C.keyDup(k.key))
 }
-
-// func (k *ckey) Duplicate() Key {
-// 	return NewKey
-// }
 
 func (k *ckey) IsBelowOrSame(key Key) bool {
 	ckey, err := toCKey(key)

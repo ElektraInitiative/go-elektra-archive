@@ -117,13 +117,7 @@ func (ks *ckeySet) Cut(key Key) KeySet {
 
 // Head returns the first Element of the KeySet - or nil if empty.
 func (ks *ckeySet) Head() Key {
-	key := newKey(C.ksHead(ks.keySet))
-
-	if key.isNil() {
-		return nil
-	}
-
-	return key
+	return newKey(C.ksHead(ks.keySet))
 }
 
 func (ks *ckeySet) Rewind() {
@@ -145,24 +139,12 @@ func (ks *ckeySet) Copy(keySet KeySet) error {
 
 // Tail returns the last Element of the KeySet - or nil if empty.
 func (ks *ckeySet) Tail() Key {
-	key := newKey(C.ksTail(ks.keySet))
-
-	if key.isNil() {
-		return nil
-	}
-
-	return key
+	return newKey(C.ksTail(ks.keySet))
 }
 
 // Pop removes and returns the last Element that was added to the KeySet.
 func (ks *ckeySet) Pop() Key {
-	key := newKey(C.ksPop(ks.keySet))
-
-	if key.isNil() {
-		return nil
-	}
-
-	return key
+	return newKey(C.ksPop(ks.keySet))
 }
 
 func (ks *ckeySet) Remove(key Key) error {
@@ -211,13 +193,7 @@ func (ks *ckeySet) Clear() error {
 
 // Next moves the Cursor to the next Key.
 func (ks *ckeySet) Next() Key {
-	key := newKey(C.ksNext(ks.keySet))
-
-	if key.isNil() {
-		return nil
-	}
-
-	return key
+	return newKey(C.ksNext(ks.keySet))
 }
 
 // Lookup searches the KeySet for a certain Key.
@@ -230,10 +206,6 @@ func (ks *ckeySet) Lookup(key Key) (Key, error) {
 
 	foundKey := newKey(C.ksLookup(ks.keySet, ckey.key, 0))
 
-	if foundKey.isNil() {
-		return nil, nil
-	}
-
 	return foundKey, nil
 }
 
@@ -243,10 +215,6 @@ func (ks *ckeySet) LookupByName(name string) Key {
 	defer C.free(unsafe.Pointer(n))
 
 	key := newKey(C.ksLookupByName(ks.keySet, n, 0))
-
-	if key.isNil() {
-		return nil
-	}
 
 	return key
 }
