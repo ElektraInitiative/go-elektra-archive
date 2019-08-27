@@ -27,6 +27,7 @@ type KeySet interface {
 	Tail() Key
 	Next() Key
 	Len() int
+	Rewind()
 
 	Cut(key Key) KeySet
 
@@ -123,6 +124,10 @@ func (ks *ckeySet) Head() Key {
 	}
 
 	return key
+}
+
+func (ks *ckeySet) Rewind() {
+	C.ksRewind(ks.keySet)
 }
 
 // Copy copies the entire KeySet to a new one.
@@ -252,7 +257,7 @@ func (ks *ckeySet) KeyNames() []string {
 	// save cursor
 	cursor := C.ksGetCursor(ks.keySet)
 
-	C.ksRewind(ks.keySet)
+	ks.Rewind()
 
 	for key := ks.Next(); key != nil; key = ks.Next() {
 		keys = append(keys, key.Name())

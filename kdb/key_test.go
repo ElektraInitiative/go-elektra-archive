@@ -2,6 +2,7 @@ package kdb_test
 
 import (
 	"bytes"
+	"fmt"
 	"math/rand"
 	"testing"
 
@@ -90,4 +91,44 @@ func TestMeta(t *testing.T) {
 	val := k.Meta("meta")
 
 	Assert(t, val == "value", "Key.Meta() did not return the correct value")
+}
+
+func TestNamespace(t *testing.T) {
+	key, _ := elektra.CreateKey("user/foo/bar")
+
+	namespace := key.Namespace()
+	expected := "user"
+
+	Assertf(t, namespace == expected, "Namespace be %q but is %q", expected, namespace)
+
+	key, _ = elektra.CreateKey("/foo/bar")
+
+	namespace = key.Namespace()
+	expected = ""
+
+	Assertf(t, namespace == expected, "Namespace be %q but is %q", expected, namespace)
+}
+
+var commonKeyNameTests = []struct {
+	key1     string
+	key2     string
+	expected string
+}{
+	{"user/foo/bar", "user/foo/bar2", "user/foo"},
+	{"proc/foo/bar", "user/foo/bar", "/foo/bar"},
+	{"user/foo/bar", "user/bar/foo", "user"},
+	{"proc/bar/foo", "user/foo/bar", ""},
+}
+
+func TestCommonKeyName(t *testing.T) {
+	for _, test := range commonKeyNameTests {
+		t.Run(fmt.Sprintf("(%q, %q)", test.key1, test.key2), func(t *testing.T) {
+			key1, _ := elektra.CreateKey(test.key1)
+			key2, _ := elektra.CreateKey(test.key2)
+
+			commonName := elektra.CommonKeyName(key1, key2)
+
+			Assertf(t, commonName == test.expected, "commonName should be %q but is %q", test.expected, commonName)
+		})
+	}
 }

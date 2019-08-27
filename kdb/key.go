@@ -19,20 +19,27 @@ import "C"
 import (
 	"fmt"
 	"runtime"
+	"strings"
 	"unsafe"
 
 	"github.com/pkg/errors"
 )
 
 type Key interface {
-	BaseName() string
 	Name() string
+	Namespace() string
+	NameWithoutNamespace() string
+	BaseName() string
+
 	Value() string
 	Boolean() bool
 	Bytes() []byte
 	Meta(name string) string
 
-	DeleteMeta(name) error	
+	DeleteMeta(name string) error
+
+	IsBelowOrSame(key Key) bool
+	// Duplicate() Key
 
 	SetMeta(name, value string) error
 	SetName(name string) error
@@ -225,7 +232,7 @@ func (k *ckey) SetMeta(name, value string) error {
 }
 
 // DeleteMeta deletes a meta Key.
-func (k *ckey) DeleteMeta(name) error {
+func (k *ckey) DeleteMeta(name string) error {
 	cName := C.CString(name)
 
 	defer C.free(unsafe.Pointer(cName))
@@ -256,4 +263,65 @@ func (k *ckey) Meta(name string) string {
 
 func (k *ckey) isNil() bool {
 	return k.key == nil
+}
+
+// func (k *ckey) Duplicate() Key {
+// 	return NewKey
+// }
+
+func (k *ckey) IsBelowOrSame(key Key) bool {
+	ckey, err := toCKey(key)
+
+	if err != nil {
+		return false
+	}
+
+	ret := C.keyIsBelowOrSame(k.key, ckey.key)
+
+	return ret != 0
+}
+
+func (k *ckey) Namespace() string {
+	name := k.Name()
+
+	if index := strings.Index(name, "/"); index < 0 {
+		return ""
+	} else {
+		return name[:index]
+	}
+}
+
+func (k *ckey) NameWithoutNamespace() string {
+	name := k.Name()
+
+	if index := strings.Index(name, "/"); index < 0 {
+		return "/"
+	} else {
+		return name[index:]
+	}
+}
+
+func CommonKeyName(key1, key2 Key) string {
+	key1Name := key1.Name()
+	key2Name := key2.Name()
+
+	if key1.IsBelowOrSame(key2) {
+		return key2Name
+	}
+	if key2.IsBelowOrSame(key1) {
+		return key1Name
+	}
+
+	if key1.Namespace() != key2.Namespace() {
+		key1Name = key1.NameWithoutNamespace()
+		key2Name = key2.NameWithoutNamespace()
+	}
+
+	index := 0
+	k1Parts, k2Parts := strings.Split(key1Name, "/"), strings.Split(key2Name, "/")
+
+	for ; index < len(k1Parts) && index < len(k2Parts) && k1Parts[index] == k2Parts[index]; index++ {
+	}
+
+	return strings.Join(k1Parts[:index], "/")
 }
