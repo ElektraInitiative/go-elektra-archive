@@ -35,10 +35,12 @@ type Key interface {
 	Boolean() bool
 	Bytes() []byte
 	Meta(name string) string
+	MetaMap() map[string]string
 
 	DeleteMeta(name string) error
 
 	IsBelowOrSame(key Key) bool
+	IsDirectBelow(key Key) bool
 	Duplicate() Key
 
 	SetMeta(name, value string) error
@@ -267,6 +269,28 @@ func (k *ckey) Meta(name string) string {
 	return metaKey.Value()
 }
 
+func (k *ckey) NextMeta() Key {
+	key := newKey(C.keyNextMeta(k.key))
+
+	if key == nil {
+		return nil
+	}
+
+	return key
+}
+
+func (k *ckey) MetaMap() map[string]string {
+	m := make(map[string]string)
+
+	C.keyRewindMeta(k.key)
+
+	for key := k.NextMeta(); key != nil; key = k.NextMeta() {
+		m[key.Name()] = key.Value()
+	}
+
+	return m
+}
+
 func (k *ckey) Duplicate() Key {
 	return newKey(C.keyDup(k.key))
 }
@@ -279,6 +303,18 @@ func (k *ckey) IsBelowOrSame(key Key) bool {
 	}
 
 	ret := C.keyIsBelowOrSame(k.key, ckey.key)
+
+	return ret != 0
+}
+
+func (k *ckey) IsDirectBelow(key Key) bool {
+	ckey, err := toCKey(key)
+
+	if err != nil {
+		return false
+	}
+
+	ret := C.keyIsDirectBelow(k.key, ckey.key)
 
 	return ret != 0
 }

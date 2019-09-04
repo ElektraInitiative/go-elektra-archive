@@ -193,7 +193,13 @@ func (ks *ckeySet) Clear() error {
 
 // Next moves the Cursor to the next Key.
 func (ks *ckeySet) Next() Key {
-	return newKey(C.ksNext(ks.keySet))
+	key := newKey(C.ksNext(ks.keySet))
+
+	if key == nil {
+		return nil
+	}
+
+	return key
 }
 
 // Lookup searches the KeySet for a certain Key.
@@ -204,9 +210,11 @@ func (ks *ckeySet) Lookup(key Key) (Key, error) {
 		return nil, err
 	}
 
-	foundKey := newKey(C.ksLookup(ks.keySet, ckey.key, 0))
+	if foundKey := newKey(C.ksLookup(ks.keySet, ckey.key, 0)); foundKey != nil {
+		return foundKey, nil
+	}
 
-	return foundKey, nil
+	return nil, nil
 }
 
 // LookupByName searches the KeySet for a Key by name.
@@ -214,25 +222,21 @@ func (ks *ckeySet) LookupByName(name string) Key {
 	n := C.CString(name)
 	defer C.free(unsafe.Pointer(n))
 
-	key := newKey(C.ksLookupByName(ks.keySet, n, 0))
+	if key := newKey(C.ksLookupByName(ks.keySet, n, 0)); key != nil  {
+		return key
+	}
 
-	return key
+	return nil
 }
 
 func (ks *ckeySet) KeyNames() []string {
 	keys := []string{}
-
-	// save cursor
-	cursor := C.ksGetCursor(ks.keySet)
 
 	ks.Rewind()
 
 	for key := ks.Next(); key != nil; key = ks.Next() {
 		keys = append(keys, key.Name())
 	}
-
-	// and reset it after iterating over the keys
-	C.ksSetCursor(ks.keySet, cursor)
 
 	return keys
 }
