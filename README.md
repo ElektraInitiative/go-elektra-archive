@@ -1,12 +1,15 @@
 # Go Bindings for Elektra
 
-This repository contains the low-level ("kdb" subpackage) and high-level (root package) Go bindings for the Elektra library.
+This repository contains the low-level ("kdb" subpackage).
 
 # Prerequisites
 
-Set your `PKG_CONFIG_PATH` environment variable to where your elektra.pc files are located (if at a nonstandard location).
+* Go (version >1.11) and
+* libelektra installed.
 
-E.g.: `PKG_CONFIG_PATH=/usr/local/lib/pkgconfig`.
+## Build
+
+Run `go install` or `go build`.
 
 ## Execute Tests
 
@@ -53,3 +56,18 @@ func main() {
     fmt.Print(value)
 }
 ```
+
+## Documentation
+
+The documentation can be viewed on [godoc.org](https://godoc.org/github.com/ElektraInitiative/go-elektra/kdb)
+
+## Troubleshooting
+
+### Elektra-Go does not compile
+
+Make sure that libelektra is installed.
+
+Go-Elektra leverages [pkg-config](https://www.freedesktop.org/wiki/Software/pkg-config/) to compile the Elektra library.
+
+If the bindings fail to compile you probably need to set the `PKG_CONFIG_PATH` to the installation folder of Elektra, e.g.: `PKG_CONFIG_PATH=/usr/local/lib/pkgconfig`.
+
