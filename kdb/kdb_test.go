@@ -36,6 +36,36 @@ func TestSet(t *testing.T) {
 	Checkf(t, err, "kdb Set failed %v", err)
 }
 
+func TestConflict(t *testing.T) {
+	kdb1 := elektra.New()
+	kdb2 := elektra.New()
+
+	ks1, _ := elektra.CreateKeySet()
+	ks2, _ := elektra.CreateKeySet()
+
+	rootKey1, _ := elektra.CreateKey("user/go-elektra/test/conflict")
+	rootKey2, _ := elektra.CreateKey("user/go-elektra/test/conflict")
+	firstKey, _ := elektra.CreateKey("user/go-elektra/test/conflict/first")
+	secondKey, _ := elektra.CreateKey("user/go-elektra/test/conflict/second")
+	conflictKey, _ := elektra.CreateKey("user/go-elektra/test/conflict/second")
+
+	_ = kdb1.Open(rootKey1)
+	_, _ = kdb1.Get(ks1, rootKey1)
+	_ = ks1.AppendKey(firstKey)
+	_, _ = kdb1.Set(ks1, rootKey1)
+
+	_ = kdb2.Open(rootKey2)
+	_, _ = kdb2.Get(ks2, rootKey2)
+
+	_ = ks1.AppendKey(secondKey)
+	_, _ = kdb1.Set(ks1, rootKey1)
+
+	_ = ks2.AppendKey(conflictKey)
+	_, err := kdb2.Set(ks2, rootKey2)
+
+	Assertf(t, err == elektra.ErrConflictingState, "expected conflict err: %v", err)
+}
+
 func TestGet(t *testing.T) {
 	t.Skip()
 
