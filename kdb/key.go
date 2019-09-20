@@ -55,7 +55,14 @@ type ckey struct {
 }
 
 func errFromKey(k *ckey) error {
-	return fmt.Errorf(k.Meta("error/description"))
+	description := k.Meta("error/description")
+	number := k.Meta("error/number")
+
+	if err, ok := ErrCodeMap[number]; ok {
+		return err
+	}
+
+	return fmt.Errorf("%s (%s)", description, number)
 }
 
 // CreateKey creates a new key with an optional value.

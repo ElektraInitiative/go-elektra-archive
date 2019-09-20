@@ -81,6 +81,10 @@ func (e *kdbC) Get(keySet KeySet, parentKey Key) (bool, error) {
 
 	changed := C.kdbGet(e.handle, cKeySet.keySet, cKey.key)
 
+	if changed == -1 {
+		return false, errFromKey(cKey)
+	}
+
 	return changed == 1, nil
 }
 
@@ -99,6 +103,10 @@ func (e *kdbC) Set(keySet KeySet, parentKey Key) (bool, error) {
 	}
 
 	changed := C.kdbSet(e.handle, cKeySet.keySet, cKey.key)
+
+	if changed == -1 {
+		return false, errFromKey(cKey)
+	}
 
 	return changed == 1, nil
 }
