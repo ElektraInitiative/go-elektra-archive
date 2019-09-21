@@ -42,11 +42,12 @@ import (
 
 func main() {
     // PREREQUISITE: run `kdb set /test/hello_world foo` in your terminal
-    parentKey, _ := kdb.CreateKey("user/test")
 	ks, _ := kdb.CreateKeySet()
 
     handle := kdb.New()
-	_, _ = handle.Open(parentKey)
+    _, _ = handle.Open()
+
+    parentKey, _ := kdb.CreateKey("user/test")
     _, _ = handle.Get(ks, parentKey)
 
     foundKey := ks.LookupByName("/test/hello_world")

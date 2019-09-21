@@ -42,7 +42,7 @@ type KeySet interface {
 }
 
 type ckeySet struct {
-	keySet *C.struct__KeySet
+	ptr *C.struct__KeySet
 }
 
 // CreateKeySet creates a new KeySet.

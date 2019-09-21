@@ -58,7 +58,7 @@ func errFromKey(k *ckey) error {
 	description := k.Meta("error/description")
 	number := k.Meta("error/number")
 
-	if err, ok := ErrCodeMap[number]; ok {
+	if err, ok := errCodeMap[number]; ok {
 		return err
 	}
 

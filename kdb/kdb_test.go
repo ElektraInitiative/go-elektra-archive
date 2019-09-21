@@ -25,7 +25,7 @@ func TestSet(t *testing.T) {
 	Checkf(t, err, "kdb.Open() failed: %v", err)
 
 	ks, _ := elektra.CreateKeySet()
-	key, _ := elektra.CreateKey("user/go-binding-low/test")
+	key, _ := elektra.CreateKey("user/go-elektra/test/set")
 	_, _ = kdb.Get(ks, key)
 
 	err = ks.AppendKey(key)
@@ -73,7 +73,7 @@ func TestGet(t *testing.T) {
 
 	kdb := elektra.New()
 
-	key, _ := elektra.CreateKey("/bla")
+	key, _ := elektra.CreateKey("user/go-elektra/test/get")
 	err := kdb.Open()
 	defer kdb.Close()
 

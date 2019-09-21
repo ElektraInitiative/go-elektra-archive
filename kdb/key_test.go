@@ -11,14 +11,13 @@ import (
 )
 
 func TestName(t *testing.T) {
-	firstName := "user/hello_world"
-	secondName := "user/hello_world2"
-
+	firstName := "user/go-elektra/test/name/1"
 	k, err := elektra.CreateKey(firstName)
 
 	Check(t, err, "could not create key")
 	Assert(t, k.Name() == firstName, "wrong key name")
 
+	secondName := "user/go-elektra/test/name/2"
 	err = k.SetName(secondName)
 
 	Check(t, err, "could not set key name")
@@ -27,7 +26,7 @@ func TestName(t *testing.T) {
 
 func TestString(t *testing.T) {
 	testValue := "Hello World"
-	k, err := elektra.CreateKey("user/hello_world", testValue)
+	k, err := elektra.CreateKey("user/go-elektra/test/string", testValue)
 
 	Check(t, err, "could not create key")
 
@@ -37,7 +36,7 @@ func TestString(t *testing.T) {
 }
 
 func TestBoolean(t *testing.T) {
-	k, err := elektra.CreateKey("user/hello_world")
+	k, err := elektra.CreateKey("user/go-elektra/test/boolean")
 
 	Check(t, err, "could not create key")
 
@@ -63,7 +62,7 @@ func TestBoolean(t *testing.T) {
 }
 
 func TestBytes(t *testing.T) {
-	k, err := elektra.CreateKey("hello_bytes")
+	k, err := elektra.CreateKey("user/go-elektra/test/bytes")
 
 	Check(t, err, "could not create key")
 
@@ -80,7 +79,7 @@ func TestBytes(t *testing.T) {
 }
 
 func TestMeta(t *testing.T) {
-	k, err := elektra.CreateKey("user/hello_world", "Hello World")
+	k, err := elektra.CreateKey("user/go-elektra/test/meta", "Hello World")
 
 	Check(t, err, "could not create key")
 
@@ -94,14 +93,14 @@ func TestMeta(t *testing.T) {
 }
 
 func TestNamespace(t *testing.T) {
-	key, _ := elektra.CreateKey("user/foo/bar")
+	key, _ := elektra.CreateKey("user/go-elektra/test/namespace")
 
 	namespace := key.Namespace()
 	expected := "user"
 
 	Assertf(t, namespace == expected, "Namespace be %q but is %q", expected, namespace)
 
-	key, _ = elektra.CreateKey("/foo/bar")
+	key, _ = elektra.CreateKey("/go-elektra/test/namespace")
 
 	namespace = key.Namespace()
 	expected = ""

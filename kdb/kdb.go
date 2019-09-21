@@ -111,6 +111,8 @@ func (e *kdbC) Set(keySet KeySet, parentKey Key) (bool, error) {
 	return changed == 1, nil
 }
 
+// Version returns the current version of Elektra
+// in the format Major.Minor.Micro
 func (e *kdbC) Version() (string, error) {
 	k, err := CreateKey("system/elektra/version")
 
@@ -131,25 +133,3 @@ func (e *kdbC) Version() (string, error) {
 
 	return version, nil
 }
-
-const (
-	KeyName          uint = C.KEY_NAME
-	KeyValue         uint = C.KEY_VALUE
-	KeyFlags         uint = C.KEY_FLAGS
-	KeyOwner         uint = C.KEY_OWNER
-	KeyComment       uint = C.KEY_COMMENT
-	KeyBinary        uint = C.KEY_BINARY
-	KeyUid           uint = C.KEY_UID
-	KeyGid           uint = C.KEY_GID
-	KeyMode          uint = C.KEY_MODE
-	KeyAtime         uint = C.KEY_ATIME
-	KeyMtime         uint = C.KEY_MTIME
-	KeyCtime         uint = C.KEY_CTIME
-	KeySize          uint = C.KEY_SIZE
-	KeyDir           uint = C.KEY_DIR
-	KeyMeta          uint = C.KEY_META
-	KeyNull          uint = C.KEY_NULL
-	KeyCascadingName uint = C.KEY_CASCADING_NAME
-	KeyMetaName      uint = C.KEY_META_NAME
-	KeyEnd           uint = C.KEY_END
-)

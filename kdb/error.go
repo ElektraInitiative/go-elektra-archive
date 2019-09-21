@@ -13,7 +13,7 @@ var (
 )
 
 var (
-	ErrCodeMap = map[string]error{
+	errCodeMap = map[string]error{
 		"C01110": ErrOutOfMemory,
 		"C01310": ErrInternal,
 		"C01320": ErrInterface,
