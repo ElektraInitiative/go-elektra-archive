@@ -10,8 +10,8 @@ import (
 
 // KDB is an interface to the Elektra library.
 type KDB interface {
-	Open(key Key) error
-	Close(key Key) error
+	Open() error
+	Close() error
 
 	Get(keySet KeySet, parentKey Key) (changed bool, err error)
 	Set(keySet KeySet, parentKey Key) (changed bool, err error)
@@ -30,17 +30,17 @@ func New() KDB {
 
 // Open creates a handle to the kdb library,
 // this is mandatory to Get / Set Keys.
-func (e *kdbC) Open(key Key) error {
-	k, err := toCKey(key)
+func (e *kdbC) Open() error {
+	key, err := createKey("")
 
 	if err != nil {
 		return err
 	}
 
-	handle := C.kdbOpen(k.key)
+	handle := C.kdbOpen(key.ptr)
 
 	if handle == nil {
-		return errFromKey(k)
+		return errFromKey(key)
 	}
 
 	e.handle = handle
@@ -49,14 +49,14 @@ func (e *kdbC) Open(key Key) error {
 }
 
 // Close closes the kdb handle.
-func (e *kdbC) Close(key Key) error {
-	ckey, err := toCKey(key)
+func (e *kdbC) Close() error {
+	key, err := createKey("")
 
 	if err != nil {
 		return err
 	}
 
-	ret := C.kdbClose(e.handle, ckey.key)
+	ret := C.kdbClose(e.handle, key.ptr)
 
 	if ret < 0 {
 		return errors.New("could not close kdb handle")
@@ -79,7 +79,7 @@ func (e *kdbC) Get(keySet KeySet, parentKey Key) (bool, error) {
 		return false, err
 	}
 
-	changed := C.kdbGet(e.handle, cKeySet.keySet, cKey.key)
+	changed := C.kdbGet(e.handle, cKeySet.ptr, cKey.ptr)
 
 	if changed == -1 {
 		return false, errFromKey(cKey)
@@ -102,7 +102,7 @@ func (e *kdbC) Set(keySet KeySet, parentKey Key) (bool, error) {
 		return false, err
 	}
 
-	changed := C.kdbSet(e.handle, cKeySet.keySet, cKey.key)
+	changed := C.kdbSet(e.handle, cKeySet.ptr, cKey.ptr)
 
 	if changed == -1 {
 		return false, errFromKey(cKey)

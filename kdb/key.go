@@ -51,7 +51,7 @@ type Key interface {
 }
 
 type ckey struct {
-	key *C.struct__Key
+	ptr *C.struct__Key
 }
 
 func errFromKey(k *ckey) error {
@@ -67,6 +67,10 @@ func errFromKey(k *ckey) error {
 
 // CreateKey creates a new key with an optional value.
 func CreateKey(name string, value ...interface{}) (Key, error) {
+	return createKey(name, value...)
+}
+
+func createKey(name string, value ...interface{}) (*ckey, error) {
 	var key *ckey
 
 	n := C.CString(name)
@@ -126,22 +130,22 @@ func toCKey(key Key) (*ckey, error) {
 
 // BaseName returns the basename of the Key.
 func (k *ckey) BaseName() string {
-	name := C.keyBaseName(k.key)
+	name := C.keyBaseName(k.ptr)
 
 	return C.GoString(name)
 }
 
 // Name returns the name of the Key.
 func (k *ckey) Name() string {
-	name := C.keyName(k.key)
+	name := C.keyName(k.ptr)
 
 	return C.GoString(name)
 }
 
 // free frees the resources of the Key.
 func (k *ckey) free() {
-	if k.key != nil {
-		C.keyDel(k.key)
+	if k.ptr != nil {
+		C.keyDel(k.ptr)
 	}
 }
 
@@ -157,7 +161,7 @@ func (k *ckey) SetBytes(value []byte) error {
 
 	size := C.ulong(len(value))
 
-	_ = C.keySetBinary(k.key, unsafe.Pointer(v), size)
+	_ = C.keySetBinary(k.ptr, unsafe.Pointer(v), size)
 
 	return nil
 }
@@ -167,7 +171,7 @@ func (k *ckey) SetString(value string) error {
 	v := C.CString(value)
 	defer C.free(unsafe.Pointer(v))
 
-	_ = C.keySetString(k.key, v)
+	_ = C.keySetString(k.ptr, v)
 
 	return nil
 }
@@ -189,7 +193,7 @@ func (k *ckey) SetName(name string) error {
 	n := C.CString(name)
 	defer C.free(unsafe.Pointer(n))
 
-	if ret := C.keySetName(k.key, n); ret < 0 {
+	if ret := C.keySetName(k.ptr, n); ret < 0 {
 		return errors.New("could not set key name")
 	}
 
@@ -198,12 +202,12 @@ func (k *ckey) SetName(name string) error {
 
 // Bytes returns the value of the Key as a byte slice.
 func (k *ckey) Bytes() []byte {
-	size := (C.ulong)(C.keyGetValueSize(k.key))
+	size := (C.ulong)(C.keyGetValueSize(k.ptr))
 
 	buffer := unsafe.Pointer((*C.char)(C.malloc(size)))
 	defer C.free(buffer)
 
-	C.keyGetBinary(k.key, buffer, C.ulong(size))
+	C.keyGetBinary(k.ptr, buffer, C.ulong(size))
 
 	bytes := C.GoBytes(buffer, C.int(size))
 
@@ -212,7 +216,7 @@ func (k *ckey) Bytes() []byte {
 
 // Value returns the string value of the Key.
 func (k *ckey) Value() string {
-	str := C.keyString(k.key)
+	str := C.keyString(k.ptr)
 
 	return C.GoString(str)
 }
@@ -237,7 +241,7 @@ func (k *ckey) SetMeta(name, value string) error {
 	defer C.free(unsafe.Pointer(cName))
 	defer C.free(unsafe.Pointer(cValue))
 
-	ret := C.keySetMeta(k.key, cName, cValue)
+	ret := C.keySetMeta(k.ptr, cName, cValue)
 
 	if ret < 0 {
 		return errors.New("could not set meta")
@@ -252,7 +256,7 @@ func (k *ckey) DeleteMeta(name string) error {
 
 	defer C.free(unsafe.Pointer(cName))
 
-	ret := C.keySetMeta(k.key, cName, nil)
+	ret := C.keySetMeta(k.ptr, cName, nil)
 
 	if ret < 0 {
 		return errors.New("could not delete meta")
@@ -267,7 +271,7 @@ func (k *ckey) Meta(name string) string {
 
 	defer C.free(unsafe.Pointer(cName))
 
-	metaKey := newKey(C.keyGetMeta(k.key, cName))
+	metaKey := newKey(C.keyGetMeta(k.ptr, cName))
 
 	if metaKey == nil {
 		return ""
@@ -277,7 +281,7 @@ func (k *ckey) Meta(name string) string {
 }
 
 func (k *ckey) NextMeta() Key {
-	key := newKey(C.keyNextMeta(k.key))
+	key := newKey(C.keyNextMeta(k.ptr))
 
 	if key == nil {
 		return nil
@@ -289,7 +293,7 @@ func (k *ckey) NextMeta() Key {
 func (k *ckey) MetaMap() map[string]string {
 	m := make(map[string]string)
 
-	C.keyRewindMeta(k.key)
+	C.keyRewindMeta(k.ptr)
 
 	for key := k.NextMeta(); key != nil; key = k.NextMeta() {
 		m[key.Name()] = key.Value()
@@ -299,7 +303,7 @@ func (k *ckey) MetaMap() map[string]string {
 }
 
 func (k *ckey) Duplicate() Key {
-	return newKey(C.keyDup(k.key))
+	return newKey(C.keyDup(k.ptr))
 }
 
 func (k *ckey) IsBelowOrSame(key Key) bool {
@@ -309,7 +313,7 @@ func (k *ckey) IsBelowOrSame(key Key) bool {
 		return false
 	}
 
-	ret := C.keyIsBelowOrSame(k.key, ckey.key)
+	ret := C.keyIsBelowOrSame(k.ptr, ckey.ptr)
 
 	return ret != 0
 }
@@ -321,7 +325,7 @@ func (k *ckey) IsDirectBelow(key Key) bool {
 		return false
 	}
 
-	ret := C.keyIsDirectBelow(k.key, ckey.key)
+	ret := C.keyIsDirectBelow(k.ptr, ckey.ptr)
 
 	return ret != 0
 }

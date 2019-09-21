@@ -50,7 +50,7 @@ func CreateKeySet(keys ...Key) (KeySet, error) {
 	size := len(keys)
 	ks := &ckeySet{C.ksNewWrapper(C.ulong(size))}
 
-	if ks.keySet == nil {
+	if ks.ptr == nil {
 		return nil, errors.New("could not create keyset")
 	}
 
@@ -87,7 +87,7 @@ func (ks *ckeySet) Append(key KeySet) error {
 		return err
 	}
 
-	ret := C.ksAppend(ks.keySet, cKeySet.keySet)
+	ret := C.ksAppend(ks.ptr, cKeySet.ptr)
 
 	if ret < 0 {
 		return errors.New("could not append keySet to keyset")
@@ -98,7 +98,7 @@ func (ks *ckeySet) Append(key KeySet) error {
 
 // NeedSync returns true if KDB.Set() has to be called.
 func (ks *ckeySet) NeedSync() bool {
-	ret := C.ksNeedSync(ks.keySet)
+	ret := C.ksNeedSync(ks.ptr)
 
 	return ret == 1
 }
@@ -110,18 +110,18 @@ func (ks *ckeySet) Cut(key Key) KeySet {
 		return nil
 	}
 
-	newKs := C.ksCut(ks.keySet, k.key)
+	newKs := C.ksCut(ks.ptr, k.ptr)
 
 	return &ckeySet{newKs}
 }
 
 // Head returns the first Element of the KeySet - or nil if empty.
 func (ks *ckeySet) Head() Key {
-	return newKey(C.ksHead(ks.keySet))
+	return newKey(C.ksHead(ks.ptr))
 }
 
 func (ks *ckeySet) Rewind() {
-	C.ksRewind(ks.keySet)
+	C.ksRewind(ks.ptr)
 }
 
 // Copy copies the entire KeySet to a new one.
@@ -132,19 +132,19 @@ func (ks *ckeySet) Copy(keySet KeySet) error {
 		return err
 	}
 
-	C.ksCopy(cKeySet.keySet, ks.keySet)
+	C.ksCopy(cKeySet.ptr, ks.ptr)
 
 	return nil
 }
 
 // Tail returns the last Element of the KeySet - or nil if empty.
 func (ks *ckeySet) Tail() Key {
-	return newKey(C.ksTail(ks.keySet))
+	return newKey(C.ksTail(ks.ptr))
 }
 
 // Pop removes and returns the last Element that was added to the KeySet.
 func (ks *ckeySet) Pop() Key {
-	return newKey(C.ksPop(ks.keySet))
+	return newKey(C.ksPop(ks.ptr))
 }
 
 func (ks *ckeySet) Remove(key Key) error {
@@ -154,7 +154,7 @@ func (ks *ckeySet) Remove(key Key) error {
 		return err
 	}
 
-	removed := C.ksLookup(ks.keySet, ckey.key, C.KDB_O_POP)
+	removed := C.ksLookup(ks.ptr, ckey.ptr, C.KDB_O_POP)
 
 	if removed == nil {
 		return errors.New("not found")
@@ -171,7 +171,7 @@ func (ks *ckeySet) AppendKey(key Key) error {
 		return err
 	}
 
-	ret := C.ksAppendKey(ks.keySet, ckey.key)
+	ret := C.ksAppendKey(ks.ptr, ckey.ptr)
 
 	if ret < 0 {
 		return errors.New("could not append key to keyset")
@@ -182,7 +182,7 @@ func (ks *ckeySet) AppendKey(key Key) error {
 
 // Clear removes all Keys from the KeySet.
 func (ks *ckeySet) Clear() error {
-	ret := C.ksClear(ks.keySet)
+	ret := C.ksClear(ks.ptr)
 
 	if ret != 0 {
 		return errors.New("unable to clear keyset")
@@ -193,7 +193,7 @@ func (ks *ckeySet) Clear() error {
 
 // Next moves the Cursor to the next Key.
 func (ks *ckeySet) Next() Key {
-	key := newKey(C.ksNext(ks.keySet))
+	key := newKey(C.ksNext(ks.ptr))
 
 	if key == nil {
 		return nil
@@ -210,7 +210,7 @@ func (ks *ckeySet) Lookup(key Key) (Key, error) {
 		return nil, err
 	}
 
-	if foundKey := newKey(C.ksLookup(ks.keySet, ckey.key, 0)); foundKey != nil {
+	if foundKey := newKey(C.ksLookup(ks.ptr, ckey.ptr, 0)); foundKey != nil {
 		return foundKey, nil
 	}
 
@@ -222,7 +222,7 @@ func (ks *ckeySet) LookupByName(name string) Key {
 	n := C.CString(name)
 	defer C.free(unsafe.Pointer(n))
 
-	if key := newKey(C.ksLookupByName(ks.keySet, n, 0)); key != nil  {
+	if key := newKey(C.ksLookupByName(ks.ptr, n, 0)); key != nil  {
 		return key
 	}
 
@@ -243,9 +243,9 @@ func (ks *ckeySet) KeyNames() []string {
 
 // Len returns the length of the KeySet.
 func (ks *ckeySet) Len() int {
-	return int(C.ksGetSize(ks.keySet))
+	return int(C.ksGetSize(ks.ptr))
 }
 
 func freeKeySet(k *ckeySet) {
-	C.ksDel(k.keySet)
+	C.ksDel(k.ptr)
 }

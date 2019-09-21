@@ -10,9 +10,8 @@ import (
 func TestOpen(t *testing.T) {
 	kdb := elektra.New()
 
-	k, _ := elektra.CreateKey("Test", "Value")
-
-	err := kdb.Open(k)
+	err := kdb.Open()
+	defer kdb.Close()
 
 	Checkf(t, err, "kdb.Open() failed: %v", err)
 }
@@ -20,8 +19,8 @@ func TestOpen(t *testing.T) {
 func TestSet(t *testing.T) {
 	kdb := elektra.New()
 
-	parent, _ := elektra.CreateKey("/error")
-	err := kdb.Open(parent)
+	err := kdb.Open()
+	defer kdb.Close()
 
 	Checkf(t, err, "kdb.Open() failed: %v", err)
 
@@ -32,7 +31,7 @@ func TestSet(t *testing.T) {
 	err = ks.AppendKey(key)
 	Checkf(t, err, "KeySet.AppendKey() failed: %v", err)
 
-	_, err = kdb.Set(ks, parent)
+	_, err = kdb.Set(ks, key)
 	Checkf(t, err, "kdb Set failed %v", err)
 }
 
@@ -49,12 +48,15 @@ func TestConflict(t *testing.T) {
 	secondKey, _ := elektra.CreateKey("user/go-elektra/test/conflict/second")
 	conflictKey, _ := elektra.CreateKey("user/go-elektra/test/conflict/second")
 
-	_ = kdb1.Open(rootKey1)
+	_ = kdb1.Open()
+	defer kdb1.Close()
+
 	_, _ = kdb1.Get(ks1, rootKey1)
 	_ = ks1.AppendKey(firstKey)
 	_, _ = kdb1.Set(ks1, rootKey1)
 
-	_ = kdb2.Open(rootKey2)
+	_ = kdb2.Open()
+	defer kdb2.Close()
 	_, _ = kdb2.Get(ks2, rootKey2)
 
 	_ = ks1.AppendKey(secondKey)
@@ -72,7 +74,8 @@ func TestGet(t *testing.T) {
 	kdb := elektra.New()
 
 	key, _ := elektra.CreateKey("/bla")
-	err := kdb.Open(key)
+	err := kdb.Open()
+	defer kdb.Close()
 
 	Checkf(t, err, "kdb.Open() failed: %v", err)
 
@@ -95,8 +98,8 @@ func TestGet(t *testing.T) {
 func TestVersion(t *testing.T) {
 	kdb := elektra.New()
 
-	key, _ := elektra.CreateKey("/bla")
-	err := kdb.Open(key)
+	err := kdb.Open()
+	defer kdb.Close()
 
 	version, err := kdb.Version()
 

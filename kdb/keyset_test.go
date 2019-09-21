@@ -10,13 +10,14 @@ import (
 func TestCreateKeySet(t *testing.T) {
 	kdb := elektra.New()
 
+	err := kdb.Open()
+	defer kdb.Close()
+
+	Check(t, err, "could not open KDB")
+
 	k, err := elektra.CreateKey("user/hello_world", "Hello World")
 
 	Check(t, err, "could not create Key")
-
-	err = kdb.Open(k)
-
-	Check(t, err, "could not open KDB")
 
 	ks, err := elektra.CreateKeySet(k)
 
@@ -27,17 +28,18 @@ func TestCreateKeySet(t *testing.T) {
 func TestAddAndRemoveFromKeySet(t *testing.T) {
 	kdb := elektra.New()
 
-	k, err := elektra.CreateKey("user/hello_world", "Hello World")
-
-	Check(t, err, "could not create Key")
-
-	err = kdb.Open(k)
+	err := kdb.Open()
+	defer kdb.Close()
 
 	Check(t, err, "could not open KDB")
 
 	ks, err := elektra.CreateKeySet()
 
 	Check(t, err, "could not create KeySet")
+
+	k, err := elektra.CreateKey("user/hello_world", "Hello World")
+
+	Check(t, err, "could not create Key")
 
 	err = ks.AppendKey(k)
 
@@ -65,8 +67,9 @@ func TestRemoveKey(t *testing.T) {
 	parentKey, err := elektra.CreateKey(namespace)
 	Check(t, err, "could not create parent Key")
 
-	err = kdb.Open(parentKey)
+	err = kdb.Open()
 	Check(t, err, "could not open KDB")
+	defer kdb.Close()
 
 	k, err := elektra.CreateKey(namespace+"/hello_world", "Hello World")
 	Check(t, err, "could not create Key")
