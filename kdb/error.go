@@ -3,13 +3,13 @@ package kdb
 import "github.com/pkg/errors"
 
 var (
-	ErrOutOfMemory         = errors.New("C01110")
-	ErrInternal            = errors.New("C01310")
-	ErrInterface           = errors.New("C01320")
-	ErrPluginMisbehavior   = errors.New("C01330")
-	ErrConflictingState    = errors.New("C02000")
-	ErrValidationSyntactic = errors.New("C03100")
-	ErrValidationSemantic  = errors.New("C03200")
+	ErrOutOfMemory         = errors.New("C01110 - OutOfMemory")
+	ErrInternal            = errors.New("C01310 - Internal")
+	ErrInterface           = errors.New("C01320 - Interface")
+	ErrPluginMisbehavior   = errors.New("C01330 - PluginMisbehavior")
+	ErrConflictingState    = errors.New("C02000 - ConflictingState")
+	ErrValidationSyntactic = errors.New("C03100 - ValidationSyntactic")
+	ErrValidationSemantic  = errors.New("C03200 - ValidationSemantic")
 )
 
 var (
