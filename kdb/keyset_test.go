@@ -101,8 +101,8 @@ func TestRemoveKey(t *testing.T) {
 	foundKey = ks.Lookup(k2)
 	Assertf(t, foundKey != nil, "KeySet does not contain key %s", k2.Name())
 
-	err = ks.Remove(k2)
-	Check(t, err, "could not delete Key")
+	removed := ks.Remove(k2)
+	Assert(t, removed != nil, "could not delete Key")
 
 	changed, err = kdb.Set(ks, parentKey)
 	Assert(t, changed, "kdb.Set() has not updated any keys")
@@ -128,7 +128,7 @@ func TestClearKeySet(t *testing.T) {
 
 	Assert(t, ks.Len() == 1, "KeySet should have len 1")
 
-	err = ks.Clear()
+	ks.Clear()
 	Check(t, err, "KeySet.Clear() failed")
 
 	Assertf(t, ks.Len() == 0, "after KeySet.Clear() KeySet.Len() should be 0 but is %d", ks.Len())

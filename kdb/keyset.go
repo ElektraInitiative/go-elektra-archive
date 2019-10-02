@@ -17,10 +17,10 @@ import (
 
 // KeySet represents a collection of Keys.
 type KeySet interface {
-	Copy(keySet KeySet) error
-	Append(keySet KeySet) error
-	AppendKey(key Key)
-	Remove(key Key) error
+	Copy(keySet KeySet)
+	Append(keySet KeySet) int
+	AppendKey(key Key) int
+	Remove(key Key) Key
 
 	Pop() Key
 	Head() Key
@@ -35,7 +35,7 @@ type KeySet interface {
 
 	NeedSync() bool
 
-	Clear() error
+	Clear()
 
 	Lookup(key Key) Key
 	LookupByName(name string) Key
@@ -75,21 +75,33 @@ func toCKeySet(keySet KeySet) (*ckeySet, error) {
 	return ckeySet, nil
 }
 
-// Append adds a Key to a KeySet.
-func (ks *ckeySet) Append(key KeySet) error {
-	cKeySet, err := toCKeySet(key)
+// Append adds a KeySet and returns the new length of the KeySet
+// after appending or -1 if keySet is not a pointer of type ckeySet.
+func (ks *ckeySet) Append(keySet KeySet) int {
+	cKeySet, err := toCKeySet(keySet)
 
 	if err != nil {
-		return err
+		return -1
 	}
 
-	ret := C.ksAppend(ks.ptr, cKeySet.ptr)
+	ret := int(C.ksAppend(ks.ptr, cKeySet.ptr))
 
-	if ret < 0 {
-		return errors.New("could not append keySet to keyset")
+	return ret
+}
+
+// AppendKey adds a Key to the KeySet  and returns the new
+// length of the KeySet after appending or -1 if the key is
+// not a pointer of type ckey.
+func (ks *ckeySet) AppendKey(key Key) int {
+	ckey, err := toCKey(key)
+
+	if err != nil {
+		return -1
 	}
 
-	return nil
+	size := int(C.ksAppendKey(ks.ptr, ckey.ptr))
+
+	return size
 }
 
 // NeedSync returns true if KDB.Set() has to be called.
@@ -121,16 +133,16 @@ func (ks *ckeySet) Rewind() {
 }
 
 // Copy copies the entire KeySet to a new one.
-func (ks *ckeySet) Copy(keySet KeySet) error {
+func (ks *ckeySet) Copy(keySet KeySet) {
 	cKeySet, err := toCKeySet(keySet)
 
 	if err != nil {
-		return err
+		return
 	}
 
 	C.ksCopy(cKeySet.ptr, ks.ptr)
 
-	return nil
+	return
 }
 
 // Tail returns the last Element of the KeySet - or nil if empty.
@@ -143,42 +155,21 @@ func (ks *ckeySet) Pop() Key {
 	return newKey(C.ksPop(ks.ptr))
 }
 
-func (ks *ckeySet) Remove(key Key) error {
+func (ks *ckeySet) Remove(key Key) Key {
 	ckey, err := toCKey(key)
 
 	if err != nil {
-		return err
+		return nil
 	}
 
 	removed := C.ksLookup(ks.ptr, ckey.ptr, C.KDB_O_POP)
 
-	if removed == nil {
-		return errors.New("not found")
-	}
-
-	return nil
-}
-
-// AppendKey adds a Key to the KeySet.
-func (ks *ckeySet) AppendKey(key Key) {
-	ckey, err := toCKey(key)
-
-	if err != nil {
-		return
-	}
-
-	C.ksAppendKey(ks.ptr, ckey.ptr)
+	return newKey(removed)
 }
 
 // Clear removes all Keys from the KeySet.
-func (ks *ckeySet) Clear() error {
-	ret := C.ksClear(ks.ptr)
-
-	if ret != 0 {
-		return errors.New("unable to clear keyset")
-	}
-
-	return nil
+func (ks *ckeySet) Clear() {
+	C.ksClear(ks.ptr)
 }
 
 // Next moves the Cursor to the next Key.
