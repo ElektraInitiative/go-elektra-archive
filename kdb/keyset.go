@@ -111,6 +111,7 @@ func (ks *ckeySet) NeedSync() bool {
 	return ret == 1
 }
 
+// Cut cuts out a new KeySet at the cutpoint key and returns it.
 func (ks *ckeySet) Cut(key Key) KeySet {
 	k, err := toCKey(key)
 
@@ -128,11 +129,12 @@ func (ks *ckeySet) Head() Key {
 	return newKey(C.ksHead(ks.ptr))
 }
 
+// Rewind resets the internal KeySet cursor.
 func (ks *ckeySet) Rewind() {
 	C.ksRewind(ks.ptr)
 }
 
-// Copy copies the entire KeySet to a new one.
+// Copy copies the entire KeySet to the passed KeySet.
 func (ks *ckeySet) Copy(keySet KeySet) {
 	cKeySet, err := toCKeySet(keySet)
 
@@ -155,6 +157,7 @@ func (ks *ckeySet) Pop() Key {
 	return newKey(C.ksPop(ks.ptr))
 }
 
+// Remove removes a key from the KeySet and returns it if found.
 func (ks *ckeySet) Remove(key Key) Key {
 	ckey, err := toCKey(key)
 
@@ -172,7 +175,7 @@ func (ks *ckeySet) Clear() {
 	C.ksClear(ks.ptr)
 }
 
-// Next moves the Cursor to the next Key.
+// Next moves the Cursor to the next Key and returns it.
 func (ks *ckeySet) Next() Key {
 	key := newKey(C.ksNext(ks.ptr))
 
@@ -210,6 +213,7 @@ func (ks *ckeySet) LookupByName(name string) Key {
 	return nil
 }
 
+// KeyNames returns a slice of the name of every Key in the KeySet.
 func (ks *ckeySet) KeyNames() []string {
 	keys := []string{}
 

@@ -25,6 +25,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Key is the wrapper around the Elektra Key.
 type Key interface {
 	Name() string
 	Namespace() string
@@ -280,6 +281,7 @@ func (k *ckey) Meta(name string) string {
 	return metaKey.Value()
 }
 
+// NextMeta returns the next Meta Key.
 func (k *ckey) NextMeta() Key {
 	key := newKey(C.keyNextMeta(k.ptr))
 
@@ -290,6 +292,7 @@ func (k *ckey) NextMeta() Key {
 	return key
 }
 
+// MetaMap builds a Key/Value map of all meta Keys.
 func (k *ckey) MetaMap() map[string]string {
 	m := make(map[string]string)
 
@@ -302,10 +305,12 @@ func (k *ckey) MetaMap() map[string]string {
 	return m
 }
 
+// Duplicate duplicates a Key.
 func (k *ckey) Duplicate() Key {
 	return newKey(C.keyDup(k.ptr))
 }
 
+// IsBelowOrSame checks if a key is below, the same or not. 
 func (k *ckey) IsBelowOrSame(key Key) bool {
 	ckey, err := toCKey(key)
 
@@ -318,6 +323,7 @@ func (k *ckey) IsBelowOrSame(key Key) bool {
 	return ret != 0
 }
 
+// IsDirectBelow checks if the key is direct below the key key or not.
 func (k *ckey) IsDirectBelow(key Key) bool {
 	ckey, err := toCKey(key)
 
@@ -330,6 +336,7 @@ func (k *ckey) IsDirectBelow(key Key) bool {
 	return ret != 0
 }
 
+// Namespace returns the namespace of a Key.
 func (k *ckey) Namespace() string {
 	name := k.Name()
 
@@ -340,6 +347,7 @@ func (k *ckey) Namespace() string {
 	}
 }
 
+// Namespace returns the name of a Key without the namespace.
 func (k *ckey) NameWithoutNamespace() string {
 	name := k.Name()
 
@@ -350,6 +358,7 @@ func (k *ckey) NameWithoutNamespace() string {
 	}
 }
 
+// CommonKeyName returns the common path of two Keys.
 func CommonKeyName(key1, key2 Key) string {
 	key1Name := key1.Name()
 	key2Name := key2.Name()
