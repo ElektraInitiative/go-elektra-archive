@@ -120,11 +120,7 @@ func (e *kdbC) Version() (string, error) {
 		return "", err
 	}
 
-	ks, err := CreateKeySet()
-
-	if err != nil {
-		return "", err
-	}
+	ks := CreateKeySet()
 
 	_, err = e.Get(ks, k)
 

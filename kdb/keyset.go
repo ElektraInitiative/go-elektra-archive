@@ -19,7 +19,7 @@ import (
 type KeySet interface {
 	Copy(keySet KeySet) error
 	Append(keySet KeySet) error
-	AppendKey(key Key) error
+	AppendKey(key Key)
 	Remove(key Key) error
 
 	Pop() Key
@@ -37,7 +37,7 @@ type KeySet interface {
 
 	Clear() error
 
-	Lookup(key Key) (Key, error)
+	Lookup(key Key) Key
 	LookupByName(name string) Key
 }
 
@@ -46,23 +46,19 @@ type ckeySet struct {
 }
 
 // CreateKeySet creates a new KeySet.
-func CreateKeySet(keys ...Key) (KeySet, error) {
+func CreateKeySet(keys ...Key) KeySet {
 	size := len(keys)
 	ks := &ckeySet{C.ksNewWrapper(C.ulong(size))}
-
-	if ks.ptr == nil {
-		return nil, errors.New("could not create keyset")
-	}
 
 	runtime.SetFinalizer(ks, freeKeySet)
 
 	for _, k := range keys {
-		if err := ks.AppendKey(k); err != nil {
-			return nil, err
+		if k != nil {
+			ks.AppendKey(k)
 		}
 	}
 
-	return ks, nil
+	return ks
 }
 
 func toCKeySet(keySet KeySet) (*ckeySet, error) {
@@ -164,20 +160,14 @@ func (ks *ckeySet) Remove(key Key) error {
 }
 
 // AppendKey adds a Key to the KeySet.
-func (ks *ckeySet) AppendKey(key Key) error {
+func (ks *ckeySet) AppendKey(key Key) {
 	ckey, err := toCKey(key)
 
 	if err != nil {
-		return err
+		return
 	}
 
-	ret := C.ksAppendKey(ks.ptr, ckey.ptr)
-
-	if ret < 0 {
-		return errors.New("could not append key to keyset")
-	}
-
-	return nil
+	C.ksAppendKey(ks.ptr, ckey.ptr)
 }
 
 // Clear removes all Keys from the KeySet.
@@ -203,18 +193,18 @@ func (ks *ckeySet) Next() Key {
 }
 
 // Lookup searches the KeySet for a certain Key.
-func (ks *ckeySet) Lookup(key Key) (Key, error) {
+func (ks *ckeySet) Lookup(key Key) Key {
 	ckey, err := toCKey(key)
 
 	if err != nil {
-		return nil, err
+		return nil
 	}
 
 	if foundKey := newKey(C.ksLookup(ks.ptr, ckey.ptr, 0)); foundKey != nil {
-		return foundKey, nil
+		return foundKey
 	}
 
-	return nil, nil
+	return nil
 }
 
 // LookupByName searches the KeySet for a Key by name.
@@ -222,7 +212,7 @@ func (ks *ckeySet) LookupByName(name string) Key {
 	n := C.CString(name)
 	defer C.free(unsafe.Pointer(n))
 
-	if key := newKey(C.ksLookupByName(ks.ptr, n, 0)); key != nil  {
+	if key := newKey(C.ksLookupByName(ks.ptr, n, 0)); key != nil {
 		return key
 	}
 

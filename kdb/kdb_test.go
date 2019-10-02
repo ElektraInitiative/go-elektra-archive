@@ -24,12 +24,11 @@ func TestSet(t *testing.T) {
 
 	Checkf(t, err, "kdb.Open() failed: %v", err)
 
-	ks, _ := elektra.CreateKeySet()
+	ks := elektra.CreateKeySet()
 	key, _ := elektra.CreateKey("user/go-elektra/test/set")
 	_, _ = kdb.Get(ks, key)
 
-	err = ks.AppendKey(key)
-	Checkf(t, err, "KeySet.AppendKey() failed: %v", err)
+	ks.AppendKey(key)
 
 	_, err = kdb.Set(ks, key)
 	Checkf(t, err, "kdb Set failed %v", err)
@@ -39,8 +38,8 @@ func TestConflict(t *testing.T) {
 	kdb1 := elektra.New()
 	kdb2 := elektra.New()
 
-	ks1, _ := elektra.CreateKeySet()
-	ks2, _ := elektra.CreateKeySet()
+	ks1 := elektra.CreateKeySet()
+	ks2 := elektra.CreateKeySet()
 
 	rootKey1, _ := elektra.CreateKey("user/go-elektra/test/conflict")
 	rootKey2, _ := elektra.CreateKey("user/go-elektra/test/conflict")
@@ -52,17 +51,17 @@ func TestConflict(t *testing.T) {
 	defer kdb1.Close()
 
 	_, _ = kdb1.Get(ks1, rootKey1)
-	_ = ks1.AppendKey(firstKey)
+	ks1.AppendKey(firstKey)
 	_, _ = kdb1.Set(ks1, rootKey1)
 
 	_ = kdb2.Open()
 	defer kdb2.Close()
 	_, _ = kdb2.Get(ks2, rootKey2)
 
-	_ = ks1.AppendKey(secondKey)
+	ks1.AppendKey(secondKey)
 	_, _ = kdb1.Set(ks1, rootKey1)
 
-	_ = ks2.AppendKey(conflictKey)
+	ks2.AppendKey(conflictKey)
 	_, err := kdb2.Set(ks2, rootKey2)
 
 	Assertf(t, err == elektra.ErrConflictingState, "expected conflict err: %v", err)
@@ -79,7 +78,7 @@ func TestGet(t *testing.T) {
 
 	Checkf(t, err, "kdb.Open() failed: %v", err)
 
-	ks, _ := elektra.CreateKeySet()
+	ks := elektra.CreateKeySet()
 
 	changed, err := kdb.Get(ks, key)
 
