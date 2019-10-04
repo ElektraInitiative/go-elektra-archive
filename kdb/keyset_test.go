@@ -15,7 +15,7 @@ func TestCreateKeySet(t *testing.T) {
 
 	Check(t, err, "could not open KDB")
 
-	k, err := elektra.CreateKey("user/go-elektra/test/createKeySet", "Hello World")
+	k, err := elektra.CreateKey("user/tests/go-elektra/createKeySet", "Hello World")
 
 	Check(t, err, "could not create Key")
 
@@ -35,7 +35,7 @@ func TestAddAndRemoveFromKeySet(t *testing.T) {
 
 	Check(t, err, "could not create KeySet")
 
-	k, err := elektra.CreateKey("user/go-elektra/test/addAndRemoveFromKeySet/1", "Hello World")
+	k, err := elektra.CreateKey("user/tests/go-elektra/addAndRemoveFromKeySet/1", "Hello World")
 
 	Check(t, err, "could not create Key")
 
@@ -44,7 +44,7 @@ func TestAddAndRemoveFromKeySet(t *testing.T) {
 	Check(t, err, "could not append to KeySet")
 	Assert(t, ks.Len() == 1, "KeySet should have len 1")
 
-	k2, err := elektra.CreateKey("user/go-elektra/test/addAndRemoveFromKeySet/2", "Hello World")
+	k2, err := elektra.CreateKey("user/tests/go-elektra/addAndRemoveFromKeySet/2", "Hello World")
 	Check(t, err, "could not create Key")
 
 	ks.AppendKey(k2)
@@ -60,7 +60,7 @@ func TestAddAndRemoveFromKeySet(t *testing.T) {
 
 func TestRemoveKey(t *testing.T) {
 	kdb := elektra.New()
-	namespace := "user/go-elektra/test/removeKey"
+	namespace := "user/tests/go-elektra/removeKey"
 
 	parentKey, err := elektra.CreateKey(namespace)
 	Check(t, err, "could not create parent Key")
@@ -95,7 +95,7 @@ func TestRemoveKey(t *testing.T) {
 	_, err = kdb.Get(ks, parentKey)
 	Check(t, err, "could not Get KeySet")
 
-	foundKey := ks.LookupByName("/go-elektra/test/removeKey/hello_world")
+	foundKey := ks.LookupByName("/tests/go-elektra/removeKey/hello_world")
 	Assertf(t, foundKey != nil, "KeySet does not contain key %s", k.Name())
 
 	foundKey = ks.Lookup(k2)
@@ -119,7 +119,7 @@ func TestRemoveKey(t *testing.T) {
 }
 
 func TestClearKeySet(t *testing.T) {
-	k, err := elektra.CreateKey("/go-elektra/test/clearKeySet", "Hello World")
+	k, err := elektra.CreateKey("user/tests/go-elektra/clearKeySet", "Hello World")
 	Check(t, err, "could not create Key")
 
 	ks := elektra.CreateKeySet(k)
@@ -135,7 +135,7 @@ func TestClearKeySet(t *testing.T) {
 }
 
 func TestLookupByName(t *testing.T) {
-	keyName := "user/go-elektra/test/lookupByName"
+	keyName := "user/tests/go-elektra/lookupByName"
 
 	k, err := elektra.CreateKey(keyName, "Hello World")
 	Check(t, err, "could not create Key")

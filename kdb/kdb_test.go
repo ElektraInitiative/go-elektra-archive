@@ -25,7 +25,7 @@ func TestSet(t *testing.T) {
 	Checkf(t, err, "kdb.Open() failed: %v", err)
 
 	ks := elektra.CreateKeySet()
-	key, _ := elektra.CreateKey("user/go-elektra/test/set")
+	key, _ := elektra.CreateKey("user/tests/go-elektra/set")
 	_, _ = kdb.Get(ks, key)
 
 	ks.AppendKey(key)
@@ -41,11 +41,11 @@ func TestConflict(t *testing.T) {
 	ks1 := elektra.CreateKeySet()
 	ks2 := elektra.CreateKeySet()
 
-	rootKey1, _ := elektra.CreateKey("user/go-elektra/test/conflict")
-	rootKey2, _ := elektra.CreateKey("user/go-elektra/test/conflict")
-	firstKey, _ := elektra.CreateKey("user/go-elektra/test/conflict/first")
-	secondKey, _ := elektra.CreateKey("user/go-elektra/test/conflict/second")
-	conflictKey, _ := elektra.CreateKey("user/go-elektra/test/conflict/second")
+	rootKey1, _ := elektra.CreateKey("user/tests/go-elektra/conflict")
+	rootKey2, _ := elektra.CreateKey("user/tests/go-elektra/conflict")
+	firstKey, _ := elektra.CreateKey("user/tests/go-elektra/conflict/first")
+	secondKey, _ := elektra.CreateKey("user/tests/go-elektra/conflict/second")
+	conflictKey, _ := elektra.CreateKey("user/tests/go-elektra/conflict/second")
 
 	_ = kdb1.Open()
 	defer kdb1.Close()
@@ -72,7 +72,7 @@ func TestGet(t *testing.T) {
 
 	kdb := elektra.New()
 
-	key, _ := elektra.CreateKey("user/go-elektra/test/get")
+	key, _ := elektra.CreateKey("user/tests/go-elektra/get")
 	err := kdb.Open()
 	defer kdb.Close()
 
