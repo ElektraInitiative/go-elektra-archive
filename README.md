@@ -1,60 +1,79 @@
 # Go Bindings for Elektra
 
-This repository contains the low-level ("kdb" subpackage).
+This repository contains the Go bindings for the low-level Elektra API.
 
-# Prerequisites
+## Prerequisites
 
 * Go (version >1.11) and
-* libelektra installed.
+* libelektra installed must be available.
 
 ## Build
 
-Run `go install` or `go build`.
+Run
+
+`go install ./kdb`
+
+or
+
+`go build ./kdb`
 
 ## Execute Tests
 
-Prerequisite: you have to have KDB and Go installed on your machine.
+Prerequisite: elektra and Go installed on your machine.
 
 Execute all tests:
+
 `go test ./...`
 
 Execute tests of a package, e.g. kdb:
+
 `go test ./kdb`
 
 ## Use Elektra in your Application
 
 Just _go get_ it like you are used to with Go.
 
-`go get github.com/ElektraInitiative/go-elektra`
+`go get github.com/ElektraInitiative/go-elektra/kdb`
 
-In the future we will add a vanity import.
+Here is an example how you can use elektra in your go application.
+Before you start create a key via the `kdb` commandline tool:
 
-To use it import it in your .go file (error handling was omitted for brevity):
+`kdb set user/go-elektra "Hello World!"`
+
+Save the following code to a file, e.g.: `elektra.go` and run it via
+
+`GO111MODULE=on go run elektra.go`
+
+Error handling was omitted for brevity.
 
 ```go
 package main
 
 import (
-    "fmt"
+	"fmt"
 
-    "github.com/ElektraInitiative/go-elektra/kdb"
+	// Import go-elektra
+	"github.com/ElektraInitiative/go-elektra/kdb"
 )
 
 func main() {
-    // PREREQUISITE: run `kdb set /test/hello_world foo` in your terminal
-	ks, _ := kdb.CreateKeySet()
+	ks := kdb.CreateKeySet()
+	keyName := "/go-elektra"
 
-    handle := kdb.New()
-    _, _ = handle.Open()
+	handle := kdb.New()
+	_ = handle.Open()
 
-    parentKey, _ := kdb.CreateKey("user/test")
-    _, _ = handle.Get(ks, parentKey)
+	parentKey, _ := kdb.CreateKey("user")
+	_, _ = handle.Get(ks, parentKey)
 
-    foundKey := ks.LookupByName("/test/hello_world")
+	foundKey := ks.LookupByName(keyName)
 
-    value := foundKey.Value()
-
-    fmt.Print(value)
+	if foundKey == nil {
+		fmt.Printf("Key %q not found, please run the following command to create it:\nkdb set user/go-elektra \"Hello World!\"\n", keyName)
+	} else {
+		value := foundKey.Value()
+		fmt.Printf("Value of %q is: %s\n", keyName, value)
+	}
 }
 ```
 
@@ -64,11 +83,18 @@ The documentation can be viewed on [godoc.org](https://godoc.org/github.com/Elek
 
 ## Troubleshooting
 
-### Elektra-Go does not compile
+### Package elektra was not found in the pkg-config search path
 
 Make sure that libelektra is installed.
 
 Go-Elektra leverages [pkg-config](https://www.freedesktop.org/wiki/Software/pkg-config/) to compile the Elektra library.
 
-If the bindings fail to compile you probably need to set the `PKG_CONFIG_PATH` to the installation folder of Elektra, e.g.: `PKG_CONFIG_PATH=/usr/local/lib/pkgconfig`.
+You need to set the `PKG_CONFIG_PATH` to the installation folder of Elektra, e.g.: `PKG_CONFIG_PATH=/usr/local/lib/pkgconfig`. 
 
+### invalid flag in pkg-config --libs: elektra/build/lib
+
+If you get an error message like this you most likely have whitespace in your build path. It appears that go does not support whitespaces in package-config (issues https://github.com/golang/go/issues/7906, https://github.com/golang/go/issues/16455).
+
+### Cannot find package "github.com/ElektraInitiative/go-elektra/kdb" 
+
+Make sure your version of Go is > `1.11` and either set the ENV variable `GO111MODULE=on` or run `go mod init` in the folder containing your go code.
