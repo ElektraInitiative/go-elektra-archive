@@ -310,7 +310,7 @@ func (k *ckey) Duplicate() Key {
 	return newKey(C.keyDup(k.ptr))
 }
 
-// IsBelowOrSame checks if a key is below, the same or not. 
+// IsBelowOrSame checks if a key is below, the same or not.
 func (k *ckey) IsBelowOrSame(key Key) bool {
 	ckey, err := toCKey(key)
 
@@ -339,23 +339,25 @@ func (k *ckey) IsDirectBelow(key Key) bool {
 // Namespace returns the namespace of a Key.
 func (k *ckey) Namespace() string {
 	name := k.Name()
+	index := strings.Index(name, "/")
 
-	if index := strings.Index(name, "/"); index < 0 {
+	if index < 0 {
 		return ""
-	} else {
-		return name[:index]
 	}
+
+	return name[:index]
 }
 
 // Namespace returns the name of a Key without the namespace.
 func (k *ckey) NameWithoutNamespace() string {
 	name := k.Name()
+	index := strings.Index(name, "/")
 
-	if index := strings.Index(name, "/"); index < 0 {
+	if index < 0 {
 		return "/"
-	} else {
-		return name[index:]
 	}
+
+	return name[index:]
 }
 
 // CommonKeyName returns the common path of two Keys.
