@@ -61,11 +61,14 @@ func TestBoolean(t *testing.T) {
 	Assertf(t, val == testValue, "Key.Boolean() %t did not match %t", val, testValue)
 }
 
+// TODO REVIEW: Not all types tested?
+
 func TestBytes(t *testing.T) {
 	k, err := elektra.CreateKey("user/tests/go-elektra/bytes")
 
 	Check(t, err, "could not create key")
 
+	// TODO REVIEW: what about byte array of length 0?
 	testValue := make([]byte, 10)
 	rand.Read(testValue)
 
@@ -90,6 +93,8 @@ func TestMeta(t *testing.T) {
 	val := k.Meta("meta")
 
 	Assert(t, val == "value", "Key.Meta() did not return the correct value")
+
+	// TODO REVIEW: Testing iterating meta?
 }
 
 func TestNamespace(t *testing.T) {

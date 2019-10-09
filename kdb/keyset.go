@@ -1,5 +1,6 @@
 package kdb
 
+// TODO REVIEW: cleanup?
 // #include <kdb.h>
 // #include <stdlib.h>
 //
@@ -25,8 +26,11 @@ type KeySet interface {
 	Pop() Key
 	Head() Key
 	Tail() Key
+	// TODO REVIEW API: We should remove the internal iterator and provide an external instead
 	Next() Key
 	Len() int
+
+	// TODO REVIEW API: We should remove the internal iterator and provide an external instead
 	Rewind()
 
 	Cut(key Key) KeySet
@@ -45,6 +49,7 @@ type ckeySet struct {
 	ptr *C.struct__KeySet
 }
 
+// TODO REVIEW API: Why not NewKeySet?
 // CreateKeySet creates a new KeySet.
 func CreateKeySet(keys ...Key) KeySet {
 	size := len(keys)
@@ -69,11 +74,14 @@ func toCKeySet(keySet KeySet) (*ckeySet, error) {
 	ckeySet, ok := keySet.(*ckeySet)
 
 	if !ok {
+		// TODO REVIEW: What is a ckeySet? (Error message not helpful)
 		return nil, errors.New("only pointer to ckeySet struct allowed")
 	}
 
 	return ckeySet, nil
 }
+
+// TODO REVIEW: Confusing description of Append
 
 // Append adds a KeySet and returns the new length of the KeySet
 // after appending or -1 if keySet is not a pointer of type ckeySet.
@@ -88,6 +96,8 @@ func (ks *ckeySet) Append(keySet KeySet) int {
 
 	return ret
 }
+
+// TODO REVIEW: Confusing description of AppendKey
 
 // AppendKey adds a Key to the KeySet  and returns the new
 // length of the KeySet after appending or -1 if the key is
@@ -124,7 +134,7 @@ func (ks *ckeySet) Cut(key Key) KeySet {
 	return &ckeySet{newKs}
 }
 
-// Head returns the first Element of the KeySet - or nil if empty.
+// Head returns the first Element of the KeySet - or nil if the KeySet is empty.
 func (ks *ckeySet) Head() Key {
 	return newKey(C.ksHead(ks.ptr))
 }

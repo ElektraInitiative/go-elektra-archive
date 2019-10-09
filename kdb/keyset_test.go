@@ -8,6 +8,7 @@ import (
 )
 
 func TestCreateKeySet(t *testing.T) {
+	// TODO REVIEW: why is kdb opened here in the KeySet tests?
 	kdb := elektra.New()
 
 	err := kdb.Open()
@@ -15,6 +16,7 @@ func TestCreateKeySet(t *testing.T) {
 
 	Check(t, err, "could not open KDB")
 
+	// TODO REVIEW: In Elektra all keys should be lower-case without any separator (except /), so you would use user/tests/go-elektra/create/key/set (or createkeyset)
 	k, err := elektra.CreateKey("user/tests/go-elektra/createKeySet", "Hello World")
 
 	Check(t, err, "could not create Key")
@@ -24,6 +26,7 @@ func TestCreateKeySet(t *testing.T) {
 }
 
 func TestAddAndRemoveFromKeySet(t *testing.T) {
+	// TODO REVIEW: why is kdb opened here in the KeySet tests?
 	kdb := elektra.New()
 
 	err := kdb.Open()
@@ -56,9 +59,12 @@ func TestAddAndRemoveFromKeySet(t *testing.T) {
 
 	Assert(t, k3 != nil, "could not pop key from KeySet")
 	Assert(t, ks.Len() == 1, "KeySet should have len 1")
+
+	// TODO REVIEW: Test Pop again
 }
 
 func TestRemoveKey(t *testing.T) {
+	// TODO REVIEW: why is kdb opened here in the KeySet tests? (should be in separated file)
 	kdb := elektra.New()
 	namespace := "user/tests/go-elektra/removeKey"
 
@@ -69,9 +75,11 @@ func TestRemoveKey(t *testing.T) {
 	Check(t, err, "could not open KDB")
 	defer kdb.Close()
 
+	// TODO REVIEW: In Elektra all keys should be lower-case without any separator (except /), so you would use hello/world, world/hello (or helloworld)
 	k, err := elektra.CreateKey(namespace+"/hello_world", "Hello World")
 	Check(t, err, "could not create Key")
 
+	// TODO REVIEW: again key name unless you want to test such key names but then also add some more UTF-8
 	k2, err := elektra.CreateKey(namespace+"/hello_world_2", "Hello World 2")
 	Check(t, err, "could not create Key")
 
@@ -116,6 +124,8 @@ func TestRemoveKey(t *testing.T) {
 
 	foundKey = ks.Lookup(k2)
 	Assertf(t, foundKey == nil, "KeySet contains key %s", k2.Name())
+
+	// TODO REVIEW: How to pop via ksLookup? Or do you have Pop with argument? (which is maybe nicer API)
 }
 
 func TestClearKeySet(t *testing.T) {

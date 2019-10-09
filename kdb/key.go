@@ -1,5 +1,6 @@
 package kdb
 
+// TODO REVIEW: cleanup?
 // #include <kdb.h>
 // #include <stdlib.h>
 //
@@ -34,15 +35,20 @@ type Key interface {
 
 	Value() string
 	Boolean() bool
+	// TODO REVIEW: other types (or move all types to higher-level)?
 	Bytes() []byte
 	Meta(name string) string
 	MetaMap() map[string]string
 
+	// TODO API REVIEW: Delete vs. Remove (used in keyset.go), should be same as it does the same
 	DeleteMeta(name string) error
 
+	// TODO REVIEW: isBelow missing?
 	IsBelowOrSame(key Key) bool
 	IsDirectBelow(key Key) bool
 	Duplicate() Key
+
+	// TODO REVIEW: equality?
 
 	SetMeta(name, value string) error
 	SetName(name string) error
@@ -71,6 +77,7 @@ func CreateKey(name string, value ...interface{}) (Key, error) {
 	return createKey(name, value...)
 }
 
+// TODO REVIEW: why is this wrapper needed?
 func createKey(name string, value ...interface{}) (*ckey, error) {
 	var key *ckey
 
@@ -129,6 +136,7 @@ func toCKey(key Key) (*ckey, error) {
 	return ckey, nil
 }
 
+// TODO REVIEW: What is the basename? (Example)
 // BaseName returns the basename of the Key.
 func (k *ckey) BaseName() string {
 	name := C.keyBaseName(k.ptr)
@@ -167,7 +175,7 @@ func (k *ckey) SetBytes(value []byte) error {
 	return nil
 }
 
-// SetString sets the value of a key to a string.
+// SetString sets the string of a key.
 func (k *ckey) SetString(value string) error {
 	v := C.CString(value)
 	defer C.free(unsafe.Pointer(v))
@@ -177,7 +185,7 @@ func (k *ckey) SetString(value string) error {
 	return nil
 }
 
-// SetBoolean sets the value of a key to a boolean
+// SetBoolean sets the string of a key to a boolean
 // where true is represented as "1" and false as "0".
 func (k *ckey) SetBoolean(value bool) error {
 	strValue := "0"
@@ -215,7 +223,8 @@ func (k *ckey) Bytes() []byte {
 	return bytes
 }
 
-// Value returns the string value of the Key.
+// TODO REVIEW API: Should be called String as it calls keyString
+// Value returns the string of the Key.
 func (k *ckey) Value() string {
 	str := C.keyString(k.ptr)
 
@@ -228,6 +237,7 @@ func (k *ckey) String() string {
 	name := k.Name()
 	value := k.Value()
 
+	// TODO REVIEW: Why is this needed?
 	if value == "" {
 		value = "(empty)"
 	}
@@ -251,6 +261,7 @@ func (k *ckey) SetMeta(name, value string) error {
 	return nil
 }
 
+// TODO REVIEW API: Delete/Remove inconsistency
 // DeleteMeta deletes a meta Key.
 func (k *ckey) DeleteMeta(name string) error {
 	cName := C.CString(name)
@@ -302,6 +313,8 @@ func (k *ckey) MetaMap() map[string]string {
 		m[key.Name()] = key.Value()
 	}
 
+	// TODO REVIEW: Should either restore cursor or use new keyMetaData API
+
 	return m
 }
 
@@ -310,7 +323,9 @@ func (k *ckey) Duplicate() Key {
 	return newKey(C.keyDup(k.ptr))
 }
 
-// IsBelowOrSame checks if a key is below, the same or not.
+// TODO REVIEW: rename key to other?
+
+// IsBelowOrSame checks if a key is below or the same as the other key.
 func (k *ckey) IsBelowOrSame(key Key) bool {
 	ckey, err := toCKey(key)
 
@@ -323,7 +338,9 @@ func (k *ckey) IsBelowOrSame(key Key) bool {
 	return ret != 0
 }
 
-// IsDirectBelow checks if the key is direct below the key key or not.
+// TODO REVIEW: rename key to other?
+
+// IsDirectBelow checks if a key is direct below the other key.
 func (k *ckey) IsDirectBelow(key Key) bool {
 	ckey, err := toCKey(key)
 
@@ -347,6 +364,8 @@ func (k *ckey) Namespace() string {
 
 	return name[:index]
 }
+
+// TODO API REVIEW: Do we really need this?
 
 // Namespace returns the name of a Key without the namespace.
 func (k *ckey) NameWithoutNamespace() string {
