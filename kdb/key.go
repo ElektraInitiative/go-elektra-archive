@@ -1,6 +1,5 @@
 package kdb
 
-// TODO REVIEW: cleanup?
 // #include <kdb.h>
 // #include <stdlib.h>
 //
@@ -30,22 +29,22 @@ import (
 type Key interface {
 	Name() string
 	Namespace() string
-	NameWithoutNamespace() string
 	BaseName() string
 
-	Value() string
+	String() string
 	Boolean() bool
 	// TODO REVIEW: other types (or move all types to higher-level)?
 	Bytes() []byte
+
 	Meta(name string) string
 	MetaMap() map[string]string
+	RemoveMeta(name string) error
+	MetaSlice() []Key
+	NextMeta() Key
 
-	// TODO API REVIEW: Delete vs. Remove (used in keyset.go), should be same as it does the same
-	DeleteMeta(name string) error
-
-	// TODO REVIEW: isBelow missing?
+	IsBelow(key Key) bool
 	IsBelowOrSame(key Key) bool
-	IsDirectBelow(key Key) bool
+	IsDirectlyBelow(key Key) bool
 	Duplicate() Key
 
 	// TODO REVIEW: equality?
@@ -72,31 +71,31 @@ func errFromKey(k *ckey) error {
 	return fmt.Errorf("%s (%s)", description, number)
 }
 
-// CreateKey creates a new key with an optional value.
-func CreateKey(name string, value ...interface{}) (Key, error) {
-	return createKey(name, value...)
+// NewKey creates a new key with an optional value.
+func NewKey(name string, value ...interface{}) (Key, error) {
+	return newKey(name, value...)
 }
 
 // TODO REVIEW: why is this wrapper needed?
-func createKey(name string, value ...interface{}) (*ckey, error) {
+func newKey(name string, value ...interface{}) (*ckey, error) {
 	var key *ckey
 
 	n := C.CString(name)
 	defer C.free(unsafe.Pointer(n))
 
 	if name == "" {
-		key = newKey(C.keyNewEmptyWrapper())
+		key = wrapKey(C.keyNewEmptyWrapper())
 	} else if len(value) > 0 {
 		switch v := value[0].(type) {
 		case string:
 			cValue := C.CString(v)
-			key = newKey(C.keyNewValueWrapper(n, cValue))
+			key = wrapKey(C.keyNewValueWrapper(n, cValue))
 			defer C.free(unsafe.Pointer(cValue))
 		default:
 			return nil, errors.New("unsupported key value type")
 		}
 	} else {
-		key = newKey(C.keyNewWrapper(n))
+		key = wrapKey(C.keyNewWrapper(n))
 	}
 
 	if key == nil {
@@ -110,7 +109,7 @@ func freeKey(k *ckey) {
 	k.free()
 }
 
-func newKey(k *C.struct__Key) *ckey {
+func wrapKey(k *C.struct__Key) *ckey {
 	if k == nil {
 		return nil
 	}
@@ -136,8 +135,10 @@ func toCKey(key Key) (*ckey, error) {
 	return ckey, nil
 }
 
-// TODO REVIEW: What is the basename? (Example)
 // BaseName returns the basename of the Key.
+// Some examples:
+// - BaseName of system/some/keyname is keyname
+// - BaseName of user/tmp/some key is "some key"
 func (k *ckey) BaseName() string {
 	name := C.keyBaseName(k.ptr)
 
@@ -160,7 +161,7 @@ func (k *ckey) free() {
 
 // Boolean returns the boolean value of the Key.
 func (k *ckey) Boolean() bool {
-	return k.Value() == "1"
+	return k.String() == "1"
 }
 
 // SetBytes sets the value of a key to a byte slice.
@@ -170,7 +171,9 @@ func (k *ckey) SetBytes(value []byte) error {
 
 	size := C.ulong(len(value))
 
-	_ = C.keySetBinary(k.ptr, unsafe.Pointer(v), size)
+	ret := C.keySetBinary(k.ptr, unsafe.Pointer(v), size)
+
+	fmt.Print(ret)
 
 	return nil
 }
@@ -216,33 +219,22 @@ func (k *ckey) Bytes() []byte {
 	buffer := unsafe.Pointer((*C.char)(C.malloc(size)))
 	defer C.free(buffer)
 
-	C.keyGetBinary(k.ptr, buffer, C.ulong(size))
+	ret := C.keyGetBinary(k.ptr, buffer, C.ulong(size))
+
+	if ret <= 0 {
+		return []byte{}
+	}
 
 	bytes := C.GoBytes(buffer, C.int(size))
 
 	return bytes
 }
 
-// TODO REVIEW API: Should be called String as it calls keyString
-// Value returns the string of the Key.
-func (k *ckey) Value() string {
+// String returns the string value of the Key.
+func (k *ckey) String() string {
 	str := C.keyString(k.ptr)
 
 	return C.GoString(str)
-}
-
-// String returns the string representation of the Key
-// in "Key: Value" format.
-func (k *ckey) String() string {
-	name := k.Name()
-	value := k.Value()
-
-	// TODO REVIEW: Why is this needed?
-	if value == "" {
-		value = "(empty)"
-	}
-
-	return fmt.Sprintf("%s: %s", name, value)
 }
 
 // SetMeta sets the meta value of a Key.
@@ -261,9 +253,8 @@ func (k *ckey) SetMeta(name, value string) error {
 	return nil
 }
 
-// TODO REVIEW API: Delete/Remove inconsistency
 // DeleteMeta deletes a meta Key.
-func (k *ckey) DeleteMeta(name string) error {
+func (k *ckey) RemoveMeta(name string) error {
 	cName := C.CString(name)
 
 	defer C.free(unsafe.Pointer(cName))
@@ -283,18 +274,18 @@ func (k *ckey) Meta(name string) string {
 
 	defer C.free(unsafe.Pointer(cName))
 
-	metaKey := newKey(C.keyGetMeta(k.ptr, cName))
+	metaKey := wrapKey(C.keyGetMeta(k.ptr, cName))
 
 	if metaKey == nil {
 		return ""
 	}
 
-	return metaKey.Value()
+	return metaKey.String()
 }
 
-// NextMeta returns the next Meta Key.
+// NextMeta returns the next meta Key.
 func (k *ckey) NextMeta() Key {
-	key := newKey(C.keyNextMeta(k.ptr))
+	key := wrapKey(C.keyNextMeta(k.ptr))
 
 	if key == nil {
 		return nil
@@ -303,52 +294,74 @@ func (k *ckey) NextMeta() Key {
 	return key
 }
 
-// MetaMap builds a Key/Value map of all meta Keys.
-func (k *ckey) MetaMap() map[string]string {
-	m := make(map[string]string)
+// MetaMap builds a slice of all meta Keys.
+func (k *ckey) MetaSlice() []Key {
+	dup := k.Duplicate().(*ckey)
+	C.keyRewindMeta(dup.ptr)
 
-	C.keyRewindMeta(k.ptr)
+	var metaKeys []Key
 
-	for key := k.NextMeta(); key != nil; key = k.NextMeta() {
-		m[key.Name()] = key.Value()
+	for key := dup.NextMeta(); key != nil; key = dup.NextMeta() {
+		metaKeys = append(metaKeys, key)
 	}
 
-	// TODO REVIEW: Should either restore cursor or use new keyMetaData API
+	return metaKeys
+}
+
+// MetaMap builds a Key/Value map of all meta Keys.
+func (k *ckey) MetaMap() map[string]string {
+	dup := k.Duplicate().(*ckey)
+	C.keyRewindMeta(dup.ptr)
+
+	m := make(map[string]string)
+
+	for key := dup.NextMeta(); key != nil; key = dup.NextMeta() {
+		m[key.Name()] = key.String()
+	}
 
 	return m
 }
 
 // Duplicate duplicates a Key.
 func (k *ckey) Duplicate() Key {
-	return newKey(C.keyDup(k.ptr))
+	return wrapKey(C.keyDup(k.ptr))
 }
 
-// TODO REVIEW: rename key to other?
-
-// IsBelowOrSame checks if a key is below or the same as the other key.
-func (k *ckey) IsBelowOrSame(key Key) bool {
-	ckey, err := toCKey(key)
+// IsBelow checks if this key is below the `other` key.
+func (k *ckey) IsBelow(other Key) bool {
+	otherKey, err := toCKey(other)
 
 	if err != nil {
 		return false
 	}
 
-	ret := C.keyIsBelowOrSame(k.ptr, ckey.ptr)
+	ret := C.keyIsBelow(otherKey.ptr, k.ptr)
 
 	return ret != 0
 }
 
-// TODO REVIEW: rename key to other?
-
-// IsDirectBelow checks if a key is direct below the other key.
-func (k *ckey) IsDirectBelow(key Key) bool {
-	ckey, err := toCKey(key)
+// IsBelowOrSame checks if this key is below or the same as the `other` key.
+func (k *ckey) IsBelowOrSame(other Key) bool {
+	otherKey, err := toCKey(other)
 
 	if err != nil {
 		return false
 	}
 
-	ret := C.keyIsDirectBelow(k.ptr, ckey.ptr)
+	ret := C.keyIsBelowOrSame(otherKey.ptr, k.ptr)
+
+	return ret != 0
+}
+
+// IsDirectBelow checks if this key is directly below the `other` key.
+func (k *ckey) IsDirectlyBelow(other Key) bool {
+	otherKey, err := toCKey(other)
+
+	if err != nil {
+		return false
+	}
+
+	ret := C.keyIsDirectlyBelow(otherKey.ptr, k.ptr)
 
 	return ret != 0
 }
@@ -365,11 +378,8 @@ func (k *ckey) Namespace() string {
 	return name[:index]
 }
 
-// TODO API REVIEW: Do we really need this?
-
-// Namespace returns the name of a Key without the namespace.
-func (k *ckey) NameWithoutNamespace() string {
-	name := k.Name()
+func nameWithoutNamespace(key Key) string {
+	name := key.Name()
 	index := strings.Index(name, "/")
 
 	if index < 0 {
@@ -392,8 +402,8 @@ func CommonKeyName(key1, key2 Key) string {
 	}
 
 	if key1.Namespace() != key2.Namespace() {
-		key1Name = key1.NameWithoutNamespace()
-		key2Name = key2.NameWithoutNamespace()
+		key1Name = nameWithoutNamespace(key1)
+		key2Name = nameWithoutNamespace(key2)
 	}
 
 	index := 0

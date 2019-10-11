@@ -1,6 +1,5 @@
 package kdb
 
-// TODO REVIEW: cleanup?
 // #include <kdb.h>
 // #include <stdlib.h>
 //
@@ -49,9 +48,8 @@ type ckeySet struct {
 	ptr *C.struct__KeySet
 }
 
-// TODO REVIEW API: Why not NewKeySet?
-// CreateKeySet creates a new KeySet.
-func CreateKeySet(keys ...Key) KeySet {
+// NewKeySet creates a new KeySet.
+func NewKeySet(keys ...Key) KeySet {
 	size := len(keys)
 	ks := &ckeySet{C.ksNewWrapper(C.ulong(size))}
 
@@ -74,19 +72,17 @@ func toCKeySet(keySet KeySet) (*ckeySet, error) {
 	ckeySet, ok := keySet.(*ckeySet)
 
 	if !ok {
-		// TODO REVIEW: What is a ckeySet? (Error message not helpful)
-		return nil, errors.New("only pointer to ckeySet struct allowed")
+		return nil, errors.New("only instances of KeySet that were created by elektra/kdb may be passed to this function")
 	}
 
 	return ckeySet, nil
 }
 
-// TODO REVIEW: Confusing description of Append
-
-// Append adds a KeySet and returns the new length of the KeySet
-// after appending or -1 if keySet is not a pointer of type ckeySet.
-func (ks *ckeySet) Append(keySet KeySet) int {
-	cKeySet, err := toCKeySet(keySet)
+// Append appends all Keys from `other` to this KeySet and returns the
+// new length of this KeySet or -1 if `other` is not a KeySet which was
+// created by elektra/kdb.
+func (ks *ckeySet) Append(other KeySet) int {
+	cKeySet, err := toCKeySet(other)
 
 	if err != nil {
 		return -1
@@ -97,11 +93,9 @@ func (ks *ckeySet) Append(keySet KeySet) int {
 	return ret
 }
 
-// TODO REVIEW: Confusing description of AppendKey
-
-// AppendKey adds a Key to the KeySet  and returns the new
-// length of the KeySet after appending or -1 if the key is
-// not a pointer of type ckey.
+// AppendKey appends a Key to this KeySet and returns the new
+// length of this KeySet or -1 if the key is
+// not a Key created by elektra/kdb.
 func (ks *ckeySet) AppendKey(key Key) int {
 	ckey, err := toCKey(key)
 
@@ -136,7 +130,7 @@ func (ks *ckeySet) Cut(key Key) KeySet {
 
 // Head returns the first Element of the KeySet - or nil if the KeySet is empty.
 func (ks *ckeySet) Head() Key {
-	return newKey(C.ksHead(ks.ptr))
+	return wrapKey(C.ksHead(ks.ptr))
 }
 
 // Rewind resets the internal KeySet cursor.
@@ -159,12 +153,12 @@ func (ks *ckeySet) Copy(keySet KeySet) {
 
 // Tail returns the last Element of the KeySet - or nil if empty.
 func (ks *ckeySet) Tail() Key {
-	return newKey(C.ksTail(ks.ptr))
+	return wrapKey(C.ksTail(ks.ptr))
 }
 
 // Pop removes and returns the last Element that was added to the KeySet.
 func (ks *ckeySet) Pop() Key {
-	return newKey(C.ksPop(ks.ptr))
+	return wrapKey(C.ksPop(ks.ptr))
 }
 
 // Remove removes a key from the KeySet and returns it if found.
@@ -177,7 +171,7 @@ func (ks *ckeySet) Remove(key Key) Key {
 
 	removed := C.ksLookup(ks.ptr, ckey.ptr, C.KDB_O_POP)
 
-	return newKey(removed)
+	return wrapKey(removed)
 }
 
 // Clear removes all Keys from the KeySet.
@@ -187,7 +181,7 @@ func (ks *ckeySet) Clear() {
 
 // Next moves the Cursor to the next Key and returns it.
 func (ks *ckeySet) Next() Key {
-	key := newKey(C.ksNext(ks.ptr))
+	key := wrapKey(C.ksNext(ks.ptr))
 
 	if key == nil {
 		return nil
@@ -204,7 +198,7 @@ func (ks *ckeySet) Lookup(key Key) Key {
 		return nil
 	}
 
-	if foundKey := newKey(C.ksLookup(ks.ptr, ckey.ptr, 0)); foundKey != nil {
+	if foundKey := wrapKey(C.ksLookup(ks.ptr, ckey.ptr, 0)); foundKey != nil {
 		return foundKey
 	}
 
@@ -216,7 +210,7 @@ func (ks *ckeySet) LookupByName(name string) Key {
 	n := C.CString(name)
 	defer C.free(unsafe.Pointer(n))
 
-	if key := newKey(C.ksLookupByName(ks.ptr, n, 0)); key != nil {
+	if key := wrapKey(C.ksLookupByName(ks.ptr, n, 0)); key != nil {
 		return key
 	}
 

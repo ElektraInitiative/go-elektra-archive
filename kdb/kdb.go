@@ -31,7 +31,7 @@ func New() KDB {
 // Open creates a handle to the kdb library,
 // this is mandatory to Get / Set Keys.
 func (e *kdbC) Open() error {
-	key, err := createKey("")
+	key, err := newKey("")
 
 	if err != nil {
 		return err
@@ -50,7 +50,7 @@ func (e *kdbC) Open() error {
 
 // Close closes the kdb handle.
 func (e *kdbC) Close() error {
-	key, err := createKey("")
+	key, err := newKey("")
 
 	if err != nil {
 		return err
@@ -114,18 +114,18 @@ func (e *kdbC) Set(keySet KeySet, parentKey Key) (bool, error) {
 // Version returns the current version of Elektra
 // in the format Major.Minor.Micro
 func (e *kdbC) Version() (string, error) {
-	k, err := CreateKey("system/elektra/version")
+	k, err := NewKey("system/elektra/version")
 
 	if err != nil {
 		return "", err
 	}
 
-	ks := CreateKeySet()
+	ks := NewKeySet()
 
 	_, err = e.Get(ks, k)
 
 	versionKey := ks.LookupByName("system/elektra/version/constants/KDB_VERSION")
-	version := versionKey.Value()
+	version := versionKey.String()
 
 	return version, nil
 }
