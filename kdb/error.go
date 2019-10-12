@@ -2,6 +2,7 @@ package kdb
 
 import "github.com/pkg/errors"
 
+// error codes taken from libelektra/src/error/specification
 var (
 	ErrOutOfMemory         = errors.New("C01110 - OutOfMemory")
 	ErrInstallation        = errors.New("C01200 - Installation")
