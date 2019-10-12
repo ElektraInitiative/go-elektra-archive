@@ -32,7 +32,6 @@ type Key interface {
 	BaseName() string
 
 	String() string
-	Boolean() bool
 	Bytes() []byte
 
 	Meta(name string) string
@@ -50,7 +49,6 @@ type Key interface {
 
 	SetMeta(name, value string) error
 	SetName(name string) error
-	SetBoolean(value bool) error
 	SetString(value string) error
 	SetBytes(value []byte) error
 }
@@ -155,11 +153,6 @@ func (k *ckey) free() {
 	if k.ptr != nil {
 		C.keyDel(k.ptr)
 	}
-}
-
-// Boolean returns the boolean value of the Key.
-func (k *ckey) Boolean() bool {
-	return k.String() == "1"
 }
 
 // SetBytes sets the value of a key to a byte slice.

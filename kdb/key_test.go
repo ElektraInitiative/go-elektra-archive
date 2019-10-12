@@ -34,29 +34,6 @@ func TestString(t *testing.T) {
 	Assertf(t, val == testValue, "Key.GetString() did not match %q", testValue)
 }
 
-func TestBoolean(t *testing.T) {
-	k, err := elektra.NewKey("user/tests/go/elektra/boolean")
-	Check(t, err, "could not create key")
-
-	testValue := true
-
-	err = k.SetBoolean(testValue)
-	Check(t, err, "SetBoolean failed")
-
-	val := k.Boolean()
-	Assertf(t, val == testValue, "Key.Boolean() %t did not match %t", val, testValue)
-
-	testValue = !testValue
-
-	err = k.SetBoolean(testValue)
-	Check(t, err, "SetBoolean failed")
-
-	val = k.Boolean()
-	Assertf(t, val == testValue, "Key.Boolean() %t did not match %t", val, testValue)
-}
-
-// TODO REVIEW: Not all types tested?
-
 var bytesTests = []struct {
 	keyName  string
 	key2     string
