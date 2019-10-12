@@ -33,7 +33,6 @@ type Key interface {
 
 	String() string
 	Boolean() bool
-	// TODO REVIEW: other types (or move all types to higher-level)?
 	Bytes() []byte
 
 	Meta(name string) string
@@ -76,7 +75,6 @@ func NewKey(name string, value ...interface{}) (Key, error) {
 	return newKey(name, value...)
 }
 
-// TODO REVIEW: why is this wrapper needed?
 func newKey(name string, value ...interface{}) (*ckey, error) {
 	var key *ckey
 

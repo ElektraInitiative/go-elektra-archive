@@ -87,8 +87,8 @@ func TestGet(t *testing.T) {
 
 	t.Log(ks.Len())
 
-	for next := ks.Next(); next != nil; next = ks.Next() {
-		t.Log(next)
+	for _, k := range ks.Slice() {
+		t.Log(k)
 	}
 
 	t.Log(ks.LookupByName("/bla"))

@@ -25,12 +25,9 @@ type KeySet interface {
 	Pop() Key
 	Head() Key
 	Tail() Key
-	// TODO REVIEW API: We should remove the internal iterator and provide an external instead
-	Next() Key
 	Len() int
 
-	// TODO REVIEW API: We should remove the internal iterator and provide an external instead
-	Rewind()
+	Slice() []Key
 
 	Cut(key Key) KeySet
 
@@ -51,9 +48,7 @@ type ckeySet struct {
 // NewKeySet creates a new KeySet.
 func NewKeySet(keys ...Key) KeySet {
 	size := len(keys)
-	ks := &ckeySet{C.ksNewWrapper(C.ulong(size))}
-
-	runtime.SetFinalizer(ks, freeKeySet)
+	ks := wrapKeySet(C.ksNewWrapper(C.ulong(size)))
 
 	for _, k := range keys {
 		if k != nil {
@@ -62,6 +57,18 @@ func NewKeySet(keys ...Key) KeySet {
 	}
 
 	return ks
+}
+
+func wrapKeySet(ks *C.struct__KeySet) *ckeySet {
+	if ks == nil {
+		return nil
+	}
+
+	keySet := &ckeySet{ks}
+
+	runtime.SetFinalizer(keySet, freeKeySet)
+
+	return keySet
 }
 
 func toCKeySet(keySet KeySet) (*ckeySet, error) {
@@ -125,17 +132,52 @@ func (ks *ckeySet) Cut(key Key) KeySet {
 
 	newKs := C.ksCut(ks.ptr, k.ptr)
 
-	return &ckeySet{newKs}
+	return wrapKeySet(newKs)
+}
+
+// Slice returns a slice containing Keys.
+func (ks *ckeySet) Slice() []Key {
+	dup := wrapKeySet(C.ksDup(ks.ptr))
+
+	C.ksRewind(dup.ptr)
+
+	var metaKeys []Key
+
+	for key := dup.next(); key != nil; key = dup.next() {
+		metaKeys = append(metaKeys, key)
+	}
+
+	return metaKeys
+}
+
+// KeyNames returns a slice of the name of every Key in the KeySet.
+func (ks *ckeySet) KeyNames() []string {
+	dup := wrapKeySet(C.ksDup(ks.ptr))
+
+	C.ksRewind(dup.ptr)
+
+	var keys []string
+
+	for key := ks.next(); key != nil; key = ks.next() {
+		keys = append(keys, key.Name())
+	}
+
+	return keys
+}
+
+func (ks *ckeySet) next() Key {
+	key := wrapKey(C.ksNext(ks.ptr))
+
+	if key == nil {
+		return nil
+	}
+
+	return key
 }
 
 // Head returns the first Element of the KeySet - or nil if the KeySet is empty.
 func (ks *ckeySet) Head() Key {
 	return wrapKey(C.ksHead(ks.ptr))
-}
-
-// Rewind resets the internal KeySet cursor.
-func (ks *ckeySet) Rewind() {
-	C.ksRewind(ks.ptr)
 }
 
 // Copy copies the entire KeySet to the passed KeySet.
@@ -179,17 +221,6 @@ func (ks *ckeySet) Clear() {
 	C.ksClear(ks.ptr)
 }
 
-// Next moves the Cursor to the next Key and returns it.
-func (ks *ckeySet) Next() Key {
-	key := wrapKey(C.ksNext(ks.ptr))
-
-	if key == nil {
-		return nil
-	}
-
-	return key
-}
-
 // Lookup searches the KeySet for a certain Key.
 func (ks *ckeySet) Lookup(key Key) Key {
 	ckey, err := toCKey(key)
@@ -215,19 +246,6 @@ func (ks *ckeySet) LookupByName(name string) Key {
 	}
 
 	return nil
-}
-
-// KeyNames returns a slice of the name of every Key in the KeySet.
-func (ks *ckeySet) KeyNames() []string {
-	keys := []string{}
-
-	ks.Rewind()
-
-	for key := ks.Next(); key != nil; key = ks.Next() {
-		keys = append(keys, key.Name())
-	}
-
-	return keys
 }
 
 // Len returns the length of the KeySet.
