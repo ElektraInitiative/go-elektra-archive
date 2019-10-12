@@ -158,7 +158,7 @@ func (ks *ckeySet) KeyNames() []string {
 
 	var keys []string
 
-	for key := ks.next(); key != nil; key = ks.next() {
+	for key := dup.next(); key != nil; key = dup.next() {
 		keys = append(keys, key.Name())
 	}
 
