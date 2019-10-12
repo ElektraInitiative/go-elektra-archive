@@ -292,7 +292,7 @@ func (k *ckey) NextMeta() Key {
 	return key
 }
 
-// MetaMap builds a slice of all meta Keys.
+// MetaSlice builds a slice of all meta Keys.
 func (k *ckey) MetaSlice() []Key {
 	dup := k.Duplicate().(*ckey)
 	C.keyRewindMeta(dup.ptr)
