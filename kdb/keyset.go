@@ -137,14 +137,10 @@ func (ks *ckeySet) Cut(key Key) KeySet {
 
 // Slice returns a slice containing Keys.
 func (ks *ckeySet) Slice() []Key {
-	dup := wrapKeySet(C.ksDup(ks.ptr))
-
-	C.ksRewind(dup.ptr)
-
 	var metaKeys []Key
 
-	for key := dup.next(); key != nil; key = dup.next() {
-		metaKeys = append(metaKeys, key)
+	for cursor := C.cursor_t(0); C.ksAtCursor(ks.ptr, cursor) != nil; cursor++ {
+		metaKeys = append(metaKeys, &ckey{C.ksAtCursor(ks.ptr, cursor)})
 	}
 
 	return metaKeys
@@ -152,27 +148,14 @@ func (ks *ckeySet) Slice() []Key {
 
 // KeyNames returns a slice of the name of every Key in the KeySet.
 func (ks *ckeySet) KeyNames() []string {
-	dup := wrapKeySet(C.ksDup(ks.ptr))
-
-	C.ksRewind(dup.ptr)
-
 	var keys []string
 
-	for key := dup.next(); key != nil; key = dup.next() {
+	for cursor := C.cursor_t(0); C.ksAtCursor(ks.ptr, cursor) != nil; cursor++ {
+		key := &ckey{C.ksAtCursor(ks.ptr, cursor)}
 		keys = append(keys, key.Name())
 	}
 
 	return keys
-}
-
-func (ks *ckeySet) next() Key {
-	key := wrapKey(C.ksNext(ks.ptr))
-
-	if key == nil {
-		return nil
-	}
-
-	return key
 }
 
 // Head returns the first Element of the KeySet - or nil if the KeySet is empty.

@@ -59,7 +59,6 @@ func main() {
 	ks := kdb.NewKeySet()
 	keyName := "/go/elektra"
 
-	// TODO API REVIEW: Separated New and Open necessary?
 	handle := kdb.New()
 	_ = handle.Open()
 

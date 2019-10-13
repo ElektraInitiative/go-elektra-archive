@@ -8,24 +8,53 @@ import (
 )
 
 func TestCreateKeySet(t *testing.T) {
-	// TODO REVIEW: In Elektra all keys should be lower-case without any separator (except /), so you would use user/tests/go/elektra/create/key/set (or createkeyset)
-	k, err := elektra.NewKey("user/tests/go/elektra/createKeySet", "Hello World")
+	k, err := elektra.NewKey("user/tests/go/elektra/createkeyset", "Hello World")
 	Check(t, err, "could not create Key")
 
 	ks := elektra.NewKeySet(k)
 	Assert(t, ks.Len() == 1, "KeySet should have len 1")
 }
 
+func TestSlice(t *testing.T) {
+	k, err := elektra.NewKey("user/tests/go/elektra/addandremovefromkeyset/1", "Hello World")
+	Check(t, err, "could not create Key")
+	k2, err := elektra.NewKey("user/tests/go/elektra/addandremovefromkeyset/2", "Hello World")
+	Check(t, err, "could not create Key")
+
+	ks := elektra.NewKeySet(k, k2)
+
+	slice := ks.Slice()
+	Assert(t, len(slice) == 2, "Slice should have length 2")
+	Assert(t, slice[1] == k && slice[0] == k2, "Slice does not contain the correct keys")
+}
+
+func TestKeyNames(t *testing.T) {
+	keyName1 := "user/tests/go/elektra/addandremovefromkeyset/1"
+	k, err := elektra.NewKey(keyName1, "Hello World")
+	Check(t, err, "could not create Key")
+
+	keyName2 := "user/tests/go/elektra/addandremovefromkeyset/2"
+	k2, err := elektra.NewKey(keyName2, "Hello World")
+	Check(t, err, "could not create Key")
+
+	ks := elektra.NewKeySet(k, k2)
+
+	keyNames := ks.KeyNames()
+	Assert(t, len(keyNames) == 2, "KeyNames should have length 2")
+	Assert(t, keyNames[0] == keyName1 && keyNames[1] == keyName2, "")
+
+}
+
 func TestAddAndRemoveFromKeySet(t *testing.T) {
 	ks := elektra.NewKeySet()
 
-	k, err := elektra.NewKey("user/tests/go/elektra/addAndRemoveFromKeySet/1", "Hello World")
+	k, err := elektra.NewKey("user/tests/go/elektra/addandremovefromkeyset/1", "Hello World")
 	Check(t, err, "could not create Key")
 
 	size := ks.AppendKey(k)
 	Assert(t, size == 1, "KeySet should have len 1")
 
-	k2, err := elektra.NewKey("user/tests/go/elektra/addAndRemoveFromKeySet/2", "Hello World")
+	k2, err := elektra.NewKey("user/tests/go/elektra/addandremovefromkeyset//2", "Hello World")
 	Check(t, err, "could not create Key")
 
 	size = ks.AppendKey(k2)
@@ -40,71 +69,8 @@ func TestAddAndRemoveFromKeySet(t *testing.T) {
 	Assert(t, ks.Len() == 0, "KeySet should have len 0")
 }
 
-func TestRemoveKey(t *testing.T) {
-	// TODO REVIEW: why is kdb opened here in the KeySet tests? (should be in separated file)
-	kdb := elektra.New()
-	namespace := "user/tests/go/elektra/removeKey"
-
-	parentKey, err := elektra.NewKey(namespace)
-	Check(t, err, "could not create parent Key")
-
-	err = kdb.Open()
-	Check(t, err, "could not open KDB")
-	defer kdb.Close()
-
-	k, err := elektra.NewKey(namespace+"/helloworld", "Hello World")
-	Check(t, err, "could not create Key")
-
-	k2, err := elektra.NewKey(namespace+"/helloworld2", "Hello World 2")
-	Check(t, err, "could not create Key")
-
-	ks := elektra.NewKeySet()
-	Check(t, err, "could not create KeySet")
-
-	changed, err := kdb.Get(ks, parentKey)
-	Assert(t, changed, "kdb.Get() has not retrieved any keys")
-	Check(t, err, "could not Get KeySet")
-
-	ks.AppendKey(k)
-	Check(t, err, "could not append Key to KeySet")
-
-	ks.AppendKey(k2)
-	Check(t, err, "could not append Key to KeySet")
-
-	changed, err = kdb.Set(ks, parentKey)
-	Assert(t, changed, "kdb.Set() has not updated any keys")
-	Check(t, err, "could not Set KeySet")
-
-	_, err = kdb.Get(ks, parentKey)
-	Check(t, err, "could not Get KeySet")
-
-	foundKey := ks.LookupByName("/tests/go/elektra/removeKey/helloworld")
-	Assertf(t, foundKey != nil, "KeySet does not contain key %s", k.Name())
-
-	foundKey = ks.Lookup(k2)
-	Assertf(t, foundKey != nil, "KeySet does not contain key %s", k2.Name())
-
-	removed := ks.Remove(k2)
-	Assert(t, removed != nil, "could not delete Key")
-
-	changed, err = kdb.Set(ks, parentKey)
-	Assert(t, changed, "kdb.Set() has not updated any keys")
-	Check(t, err, "could not set KeySet")
-
-	_, err = kdb.Get(ks, parentKey)
-	Check(t, err, "could not Get KeySet")
-
-	foundKey = ks.Lookup(k)
-	Assertf(t, foundKey != nil, "KeySet does not contain key %s", k.Name())
-
-	foundKey = ks.Lookup(k2)
-	Assertf(t, foundKey == nil, "KeySet contains key %s", k2.Name())
-
-	// TODO REVIEW: How to pop via ksLookup? Or do you have Pop with argument? (which is maybe nicer API)
-}
-
 func TestClearKeySet(t *testing.T) {
-	k, err := elektra.NewKey("user/tests/go/elektra/clearKeySet", "Hello World")
+	k, err := elektra.NewKey("user/tests/go/elektra/clearkeyset", "Hello World")
 	Check(t, err, "could not create Key")
 
 	ks := elektra.NewKeySet(k)
@@ -120,7 +86,7 @@ func TestClearKeySet(t *testing.T) {
 }
 
 func TestLookupByName(t *testing.T) {
-	keyName := "user/tests/go/elektra/lookupByName"
+	keyName := "user/tests/go/elektra/lookupbyname"
 
 	k, err := elektra.NewKey(keyName, "Hello World")
 	Check(t, err, "could not create Key")

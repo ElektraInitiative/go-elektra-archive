@@ -43,9 +43,9 @@ type Key interface {
 	IsBelow(key Key) bool
 	IsBelowOrSame(key Key) bool
 	IsDirectlyBelow(key Key) bool
-	Duplicate() Key
+	Compare(key Key) int
 
-	// TODO REVIEW: equality?
+	Duplicate() Key
 
 	SetMeta(name, value string) error
 	SetName(name string) error
@@ -68,11 +68,13 @@ func errFromKey(k *ckey) error {
 	return fmt.Errorf("%s (%s)", description, number)
 }
 
-// NewKey creates a new key with an optional value.
+// NewKey creates a new `Key` with an optional value.
 func NewKey(name string, value ...interface{}) (Key, error) {
 	return newKey(name, value...)
 }
 
+// newKey should be used internally because the C pointer
+// can be used directly without having to cast from `Key` first.
 func newKey(name string, value ...interface{}) (*ckey, error) {
 	var key *ckey
 
@@ -344,7 +346,7 @@ func (k *ckey) IsBelowOrSame(other Key) bool {
 	return ret != 0
 }
 
-// IsDirectBelow checks if this key is directly below the `other` key.
+// IsDirectlyBelow checks if this key is directly below the `other` Key.
 func (k *ckey) IsDirectlyBelow(other Key) bool {
 	otherKey, err := toCKey(other)
 
@@ -355,6 +357,16 @@ func (k *ckey) IsDirectlyBelow(other Key) bool {
 	ret := C.keyIsDirectlyBelow(otherKey.ptr, k.ptr)
 
 	return ret != 0
+}
+
+// Compare the name of two keys. It returns 0 if the keys are equal,
+// < 0 if this key is less than `other` Key and
+// > 0 if this key is greater than `other` Key.
+// This function defines the sorting order of a KeySet.
+func (k *ckey) Compare(other Key) int {
+	otherKey, _ := toCKey(other)
+
+	return C.keyCmp(k.ptr, otherKey.ptr)
 }
 
 // Namespace returns the namespace of a Key.
