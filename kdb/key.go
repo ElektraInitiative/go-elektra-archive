@@ -366,7 +366,7 @@ func (k *ckey) IsDirectlyBelow(other Key) bool {
 func (k *ckey) Compare(other Key) int {
 	otherKey, _ := toCKey(other)
 
-	return C.keyCmp(k.ptr, otherKey.ptr)
+	return int(C.keyCmp(k.ptr, otherKey.ptr))
 }
 
 // Namespace returns the namespace of a Key.
