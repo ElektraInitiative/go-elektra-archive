@@ -3,6 +3,9 @@
 This repository contains Go bindings for the low-level API
 for Elektra as found in `kdb.h`.
 
+Go-Elektra leverages [cgo](https://golang.org/cmd/cgo/) to call the C functions
+of the Elektra library.
+
 ## Prerequisites
 
 * Go (version >1.11) and
@@ -61,6 +64,7 @@ func main() {
 
 	handle := kdb.New()
 	_ = handle.Open()
+	defer handle.Close()
 
 	parentKey, _ := kdb.NewKey("user")
 	_, _ = handle.Get(ks, parentKey)
