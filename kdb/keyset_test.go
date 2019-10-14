@@ -69,19 +69,38 @@ func TestAddAndRemoveFromKeySet(t *testing.T) {
 	Assert(t, ks.Len() == 0, "KeySet should have len 0")
 }
 
+func TestRemove(t *testing.T) {
+
+	k1, err := elektra.NewKey("user/tests/go/elektra/remove/1", "Hello World")
+	Check(t, err, "could not create Key")
+	k2, err := elektra.NewKey("user/tests/go/elektra/remove/2", "Hello World")
+	Check(t, err, "could not create Key")
+	k3, err := elektra.NewKey("user/tests/go/elektra/remove/3", "Hello World")
+	Check(t, err, "could not create Key")
+
+	ks := elektra.NewKeySet(k1, k2, k3)
+
+	Assert(t, ks.Len() == 3, "KeySet should have length 3")
+
+	removed := ks.Remove(k1)
+	Assert(t, removed != nil, "Remove failed")
+	Assert(t, ks.Len() == 2, "KeySet should have length 2")
+
+	removed = ks.RemoveByName("user/tests/go/elektra/remove/2")
+	Assert(t, removed != nil, "RemoveByName failed")
+	Assert(t, ks.Len() == 1, "KeySet should have length 2")
+}
+
 func TestClearKeySet(t *testing.T) {
 	k, err := elektra.NewKey("user/tests/go/elektra/clearkeyset", "Hello World")
 	Check(t, err, "could not create Key")
 
 	ks := elektra.NewKeySet(k)
-
 	Check(t, err, "could not create KeySet")
-
 	Assert(t, ks.Len() == 1, "KeySet should have len 1")
 
 	ks.Clear()
 	Check(t, err, "KeySet.Clear() failed")
-
 	Assertf(t, ks.Len() == 0, "after KeySet.Clear() KeySet.Len() should be 0 but is %d", ks.Len())
 }
 
@@ -94,7 +113,6 @@ func TestLookupByName(t *testing.T) {
 	ks := elektra.NewKeySet(k)
 
 	foundKey := ks.LookupByName(keyName)
-
 	Assert(t, foundKey != nil, "KeySet.LookupByName() did not find the correct Key")
 	Assertf(t, foundKey.Name() == keyName,
 		"the name of Key found by LookupByName() should be %q but is %q", k.Name(), foundKey.Name())

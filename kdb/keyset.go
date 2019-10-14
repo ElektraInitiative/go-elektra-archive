@@ -21,6 +21,7 @@ type KeySet interface {
 	Append(keySet KeySet) int
 	AppendKey(key Key) int
 	Remove(key Key) Key
+	RemoveByName(name string) Key
 
 	Pop() Key
 	Head() Key
@@ -197,6 +198,18 @@ func (ks *ckeySet) Remove(key Key) Key {
 	removed := C.ksLookup(ks.ptr, ckey.ptr, C.KDB_O_POP)
 
 	return wrapKey(removed)
+}
+
+// RemoveByName removes a key by its name from the KeySet and returns it if found.
+func (ks *ckeySet) RemoveByName(name string) Key {
+	n := C.CString(name)
+	defer C.free(unsafe.Pointer(n))
+
+	if key := wrapKey(C.ksLookupByName(ks.ptr, n, C.KDB_O_POP)); key != nil {
+		return key
+	}
+
+	return nil
 }
 
 // Clear removes all Keys from the KeySet.
