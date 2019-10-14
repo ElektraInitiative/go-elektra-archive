@@ -55,6 +55,9 @@ type Key interface {
 	SetBoolean(value bool) error
 	SetString(value string) error
 	SetBytes(value []byte) error
+
+
+	// TODO API REVIEW: inconsistencies to KeySet interface: KeySet provides "Clear", Key not (both are marked as internal)
 }
 
 type ckey struct {

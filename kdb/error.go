@@ -3,7 +3,7 @@ package kdb
 import "github.com/pkg/errors"
 
 var (
-	ErrOutOfMemory         = errors.New("C01110 - OutOfMemory")
+
 	// TODO REVIEW: Installation error missing
 	ErrInternal            = errors.New("C01310 - Internal")
 	ErrInterface           = errors.New("C01320 - Interface")

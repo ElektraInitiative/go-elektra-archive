@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// KDB is an interface to the Elektra library.
+// KDB (key data base) access functions
 type KDB interface {
 	Open() error
 	Close() error
@@ -88,6 +88,8 @@ func (e *kdbC) Get(keySet KeySet, parentKey Key) (bool, error) {
 	return changed == 1, nil
 }
 
+// TODO REVIEW: return values not documented
+
 // Set sets all Keys of a KeySet.
 func (e *kdbC) Set(keySet KeySet, parentKey Key) (bool, error) {
 	cKey, err := toCKey(parentKey)
@@ -110,6 +112,8 @@ func (e *kdbC) Set(keySet KeySet, parentKey Key) (bool, error) {
 
 	return changed == 1, nil
 }
+
+// TODO REVIEW: document that this function also calls kdb.Get as this might lead to unexpected state-changes
 
 // Version returns the current version of Elektra
 // in the format Major.Minor.Micro
