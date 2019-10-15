@@ -103,20 +103,31 @@ func newKey(name string, value ...interface{}) (*ckey, error) {
 	return key, nil
 }
 
-func freeKey(k *ckey) {
-	k.free()
-}
-
 func wrapKey(k *C.struct__Key) *ckey {
 	if k == nil {
 		return nil
 	}
 
-	key := &ckey{k}
+	C.keyIncRef(k)
+
+	key := &ckey{ptr: k}
 
 	runtime.SetFinalizer(key, freeKey)
 
 	return key
+}
+
+// freeKey frees the resources of the Key.
+func freeKey(k *ckey) {
+	if k.ptr == nil {
+		return
+	}
+
+	refs := C.keyDecRef(k.ptr)
+
+	if refs == 0 {
+		C.keyDel(k.ptr)
+	}
 }
 
 func toCKey(key Key) (*ckey, error) {
@@ -148,13 +159,6 @@ func (k *ckey) Name() string {
 	name := C.keyName(k.ptr)
 
 	return C.GoString(name)
-}
-
-// free frees the resources of the Key.
-func (k *ckey) free() {
-	if k.ptr != nil {
-		C.keyDel(k.ptr)
-	}
 }
 
 // SetBytes sets the value of a key to a byte slice.

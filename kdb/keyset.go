@@ -28,10 +28,10 @@ type KeySet interface {
 	Tail() Key
 	Len() int
 
-	Slice() []Key
-
 	Cut(key Key) KeySet
 
+	Each(iterator Iterator)
+	Slice() []Key
 	KeyNames() []string
 
 	NeedSync() bool
@@ -52,9 +52,7 @@ func NewKeySet(keys ...Key) KeySet {
 	ks := wrapKeySet(C.ksNewWrapper(C.ulong(size)))
 
 	for _, k := range keys {
-		if k != nil {
-			ks.AppendKey(k)
-		}
+		ks.AppendKey(k)
 	}
 
 	return ks
@@ -70,6 +68,12 @@ func wrapKeySet(ks *C.struct__KeySet) *ckeySet {
 	runtime.SetFinalizer(keySet, freeKeySet)
 
 	return keySet
+}
+
+func freeKeySet(k *ckeySet) {
+	if k.ptr != nil {
+		C.ksDel(k.ptr)
+	}
 }
 
 func toCKeySet(keySet KeySet) (*ckeySet, error) {
@@ -140,21 +144,43 @@ func (ks *ckeySet) Cut(key Key) KeySet {
 func (ks *ckeySet) Slice() []Key {
 	var metaKeys []Key
 
-	for cursor := C.cursor_t(0); C.ksAtCursor(ks.ptr, cursor) != nil; cursor++ {
-		metaKeys = append(metaKeys, &ckey{C.ksAtCursor(ks.ptr, cursor)})
-	}
+	ks.loop(func(k Key) bool {
+		metaKeys = append(metaKeys, k)
+		return true
+	})
 
 	return metaKeys
+}
+
+// Iterator is a function that loops over Keys.
+// Return false if you want break out of the loop.
+type Iterator func(k Key) bool
+
+func (ks *ckeySet) loop(iterator Iterator) {
+	for cursor := C.cursor_t(0); C.ksAtCursor(ks.ptr, cursor) != nil; cursor++ {
+		key := wrapKey(C.ksAtCursor(ks.ptr, cursor))
+		cont := iterator(key)
+
+		if !cont {
+			break
+		}
+	}
+
+}
+
+// Loop accepts an `Iterator` that loops over every Key in the KeySet.
+func (ks *ckeySet) Each(iterator Iterator) {
+	ks.loop(iterator)
 }
 
 // KeyNames returns a slice of the name of every Key in the KeySet.
 func (ks *ckeySet) KeyNames() []string {
 	var keys []string
 
-	for cursor := C.cursor_t(0); C.ksAtCursor(ks.ptr, cursor) != nil; cursor++ {
-		key := &ckey{C.ksAtCursor(ks.ptr, cursor)}
-		keys = append(keys, key.Name())
-	}
+	ks.loop(func(k Key) bool {
+		keys = append(keys, k.Name())
+		return true
+	})
 
 	return keys
 }
@@ -249,6 +275,32 @@ func (ks *ckeySet) Len() int {
 	return int(C.ksGetSize(ks.ptr))
 }
 
-func freeKeySet(k *ckeySet) {
-	C.ksDel(k.ptr)
+/*****
+	The following functions are for benchmarks only
+	and should not be exported
+*****/
+
+func (ks *ckeySet) loopInternal(iterator Iterator) {
+	cursor := C.ksGetCursor(ks.ptr)
+	defer C.ksSetCursor(ks.ptr, cursor)
+
+	next := func() Key {
+		key := wrapKey(C.ksNext(ks.ptr))
+
+		if key == nil {
+			return nil
+		}
+
+		return key
+	}
+
+	C.ksRewind(ks.ptr)
+
+	for key := next(); key != nil; key = next() {
+		cont := iterator(key)
+
+		if !cont {
+			break
+		}
+	}
 }

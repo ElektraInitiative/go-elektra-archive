@@ -21,7 +21,7 @@ or
 
 `go build ./kdb`
 
-## Execute Tests
+## Run Tests
 
 Prerequisite: Elektra and Go installed on your machine.
 
@@ -33,13 +33,23 @@ Execute tests of a package, e.g. kdb:
 
 `go test ./kdb`
 
+## Run Benchmarks
+
+The file `benchmark_test.go` contains several benchmarks, every function that starts with `Benchmark` is a separate benchmark, e.g. `BenchmarkKeySetInternalCallbackIterator`.
+
+To run a benchmark run the following command from the root folder of this package:
+
+```bash
+go test -benchmem -run="^\$" ./kdb -bench "^(BenchmarkKeySetSliceRangeIterator)\$"
+```
+
 ## Use Elektra in your Application
 
 Just _go get_ it like you are used to with Go.
 
 `go get github.com/ElektraInitiative/go-elektra/kdb`
 
-Here is an example how you can use Elektra in your Go application.
+Here is an example how you can use Elektra in your Go application. The test files are also a good source if you want to get to know how to use these bindings.
 Before you start create a key via the `kdb` command-line tool:
 
 `kdb set user/go/elektra 'Hello World!'`
