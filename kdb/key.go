@@ -73,8 +73,8 @@ func NewKey(name string, value ...interface{}) (Key, error) {
 	return newKey(name, value...)
 }
 
-// newKey should be used internally because the C pointer
-// can be used directly without having to cast from `Key` first.
+// newKey is not exported and should only be used internally in this package because the C pointer should not be exposed to packages using these bindings
+// Its useful since the C pointer can be used directly without having to cast from `Key` first.
 func newKey(name string, value ...interface{}) (*ckey, error) {
 	var key *ckey
 
