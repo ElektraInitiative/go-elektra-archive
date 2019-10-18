@@ -10,9 +10,7 @@ import (
 func setupInMemoryKeySet(b *testing.B, count int) *ckeySet {
 	b.Helper()
 
-	keys := []Key{}
-
-	ks := NewKeySet(keys...)
+	ks := NewKeySet()
 
 	for n := 0; n < count; n++ {
 		k, err := NewKey(fmt.Sprintf("proc/tests/go/elektra/benchmark/iterator/callback/%03d", n))

@@ -4,7 +4,7 @@ package kdb
 // #include <stdlib.h>
 //
 // static Key * keyNewEmptyWrapper() {
-//   return keyNew(0);
+//   return keyNew(0, KEY_END);
 // }
 //
 // static Key * keyNewWrapper(char* k) {
@@ -57,6 +57,10 @@ type ckey struct {
 	ptr *C.struct__Key
 }
 
+var (
+	keys = make(map[*C.struct__Key]*ckey)
+)
+
 func errFromKey(k *ckey) error {
 	description := k.Meta("error/description")
 	number := k.Meta("error/number")
@@ -108,11 +112,15 @@ func wrapKey(k *C.struct__Key) *ckey {
 		return nil
 	}
 
+	var key *ckey
+
+	if key = keys[k]; key == nil {
+		key = &ckey{ptr: k}
+		keys[k] = key
+		runtime.SetFinalizer(key, freeKey)
+	}
+
 	C.keyIncRef(k)
-
-	key := &ckey{ptr: k}
-
-	runtime.SetFinalizer(key, freeKey)
 
 	return key
 }
@@ -123,11 +131,8 @@ func freeKey(k *ckey) {
 		return
 	}
 
-	refs := C.keyDecRef(k.ptr)
-
-	if refs == 0 {
-		C.keyDel(k.ptr)
-	}
+	C.keyDecRef(k.ptr)
+	C.keyDel(k.ptr)
 }
 
 func toCKey(key Key) (*ckey, error) {
