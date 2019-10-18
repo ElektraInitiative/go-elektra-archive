@@ -25,7 +25,7 @@ func TestSlice(t *testing.T) {
 
 	slice := ks.Slice()
 	Assert(t, len(slice) == 2, "Slice should have length 2")
-	Assert(t, slice[1] == k && slice[0] == k2, "Slice does not contain the correct keys")
+	Assert(t, slice[0].Compare(k) == 0 && slice[1].Compare(k2) == 0, "Slice does not contain the correct keys")
 }
 
 func TestKeyNames(t *testing.T) {
