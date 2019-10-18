@@ -142,14 +142,14 @@ func (ks *ckeySet) Cut(key Key) KeySet {
 
 // Slice returns a slice containing Keys.
 func (ks *ckeySet) Slice() []Key {
-	var metaKeys []Key
+	var keys []Key
 
 	ks.loop(func(k Key) bool {
-		metaKeys = append(metaKeys, k)
+		keys = append(keys, k)
 		return true
 	})
 
-	return metaKeys
+	return keys
 }
 
 // Iterator is a function that loops over Keys.
