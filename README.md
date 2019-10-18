@@ -39,7 +39,7 @@ The file `benchmark_test.go` contains several benchmarks, every function that st
 
 To run a benchmark run the following command from the root folder of this package:
 
-```bash
+```sh
 go test -benchmem -gcflags=-N -run="^\$" ./kdb -bench "^(BenchmarkKeySetSliceRangeIterator)\$"
 ```
 
