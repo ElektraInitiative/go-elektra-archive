@@ -147,7 +147,7 @@ func toCKey(key Key) (*ckey, error) {
 // BaseName returns the basename of the Key.
 // Some examples:
 // - BaseName of system/some/keyname is keyname
-// - BaseName of user/tmp/some key is "some key"
+// - BaseName of "user/tmp/some key" is "some key"
 func (k *ckey) BaseName() string {
 	name := C.keyBaseName(k.ptr)
 
