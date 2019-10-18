@@ -92,12 +92,16 @@ func TestRemove(t *testing.T) {
 }
 
 func TestClearKeySet(t *testing.T) {
-	k, err := elektra.NewKey("user/tests/go/elektra/clearkeyset", "Hello World")
+	k, err := elektra.NewKey("user/tests/go/elektra/clearkeyset/1", "Hello World")
 	Check(t, err, "could not create Key")
 
 	ks := elektra.NewKeySet(k)
 	Check(t, err, "could not create KeySet")
 	Assert(t, ks.Len() == 1, "KeySet should have len 1")
+
+	k2, err := elektra.NewKey("user/tests/go/elektra/clearkeyset/2", "Hello World")
+	Check(t, err, "could not create Key")
+	ks.AppendKey(k2)
 
 	ks.Clear()
 	Check(t, err, "KeySet.Clear() failed")

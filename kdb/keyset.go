@@ -240,7 +240,14 @@ func (ks *ckeySet) RemoveByName(name string) Key {
 
 // Clear removes all Keys from the KeySet.
 func (ks *ckeySet) Clear() {
-	C.ksClear(ks.ptr)
+	root, _ := newKey("/")
+
+	// don't user `ksClear` because it is internal
+	// and renders the KeySet unusable
+	newKs := C.ksCut(ks.ptr, root.ptr)
+
+	// we don't need this keyset
+	C.ksDel(newKs)
 }
 
 // Lookup searches the KeySet for a certain Key.
