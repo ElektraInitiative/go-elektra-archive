@@ -297,7 +297,7 @@ func (ks *ckeySet) Clear() {
 		ks.forgetKey(k.(*ckey).ptr)
 	})
 
-	// don't user `ksClear` because it is internal
+	// don't use `ksClear` because it is internal
 	// and renders the KeySet unusable
 	newKs := C.ksCut(ks.ptr, root.ptr)
 
