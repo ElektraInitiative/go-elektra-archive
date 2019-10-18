@@ -127,33 +127,6 @@ func TestConflict(t *testing.T) {
 	Assertf(t, err == elektra.ErrConflictingState, "expected conflict err: %v", err)
 }
 
-func TestGet(t *testing.T) {
-	t.Skip()
-
-	kdb := elektra.New()
-
-	key, _ := elektra.NewKey("user/tests/go/elektra/get")
-	err := kdb.Open()
-	defer kdb.Close()
-
-	Checkf(t, err, "kdb.Open() failed: %v", err)
-
-	ks := elektra.NewKeySet()
-
-	changed, err := kdb.Get(ks, key)
-
-	Assert(t, changed, "kdb.Get() has not retrieved any keys")
-	Checkf(t, err, "kdb.Get() failed: %v", err)
-
-	t.Log(ks.Len())
-
-	for _, k := range ks.Slice() {
-		t.Log(k)
-	}
-
-	t.Log(ks.LookupByName("/bla"))
-}
-
 func TestVersion(t *testing.T) {
 	kdb := elektra.New()
 
