@@ -28,8 +28,7 @@ func BenchmarkKeySetExternalCallbackIterator(b *testing.B) {
 	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
-		ks.Each(func(k Key) bool {
-			return true
+		ks.Each(func(k Key) {
 		})
 	}
 }
@@ -40,8 +39,7 @@ func BenchmarkKeySetInternalCallbackIterator(b *testing.B) {
 	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
-		ks.loopInternal(func(k Key) bool {
-			return true
+		ks.loopInternal(func(k Key) {
 		})
 	}
 }

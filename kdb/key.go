@@ -57,10 +57,6 @@ type ckey struct {
 	ptr *C.struct__Key
 }
 
-var (
-	keys = make(map[*C.struct__Key]*ckey)
-)
-
 func errFromKey(k *ckey) error {
 	description := k.Meta("error/description")
 	number := k.Meta("error/number")
@@ -112,13 +108,8 @@ func wrapKey(k *C.struct__Key) *ckey {
 		return nil
 	}
 
-	var key *ckey
-
-	if key = keys[k]; key == nil {
-		key = &ckey{ptr: k}
-		keys[k] = key
-		runtime.SetFinalizer(key, freeKey)
-	}
+	key := &ckey{ptr: k}
+	runtime.SetFinalizer(key, freeKey)
 
 	C.keyIncRef(k)
 
