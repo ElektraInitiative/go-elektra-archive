@@ -4,6 +4,7 @@ import "github.com/pkg/errors"
 
 // error codes taken from libelektra/src/error/specification
 var (
+	ErrResource            = errors.New("C01100 Resource")
 	ErrOutOfMemory         = errors.New("C01110 - OutOfMemory")
 	ErrInstallation        = errors.New("C01200 - Installation")
 	ErrInternal            = errors.New("C01310 - Internal")
