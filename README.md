@@ -3,6 +3,9 @@
 This repository contains Go bindings for the low-level API
 for Elektra as found in `kdb.h`.
 
+Go-Elektra leverages [cgo](https://golang.org/cmd/cgo/) to call the C functions
+of the Elektra library.
+
 ## Prerequisites
 
 * Go (version >1.11) and
@@ -18,7 +21,7 @@ or
 
 `go build ./kdb`
 
-## Execute Tests
+## Run Tests
 
 Prerequisite: Elektra and Go installed on your machine.
 
@@ -30,18 +33,28 @@ Execute tests of a package, e.g. kdb:
 
 `go test ./kdb`
 
-## Use Elektra in your Application
+## Run Benchmarks
 
-Just _go get_ it like you are used to with Go.
+The [benchmarks](./kdb/benchmark_test.go) contains several benchmarks, every function that starts with `Benchmark` is a separate benchmark, e.g. `BenchmarkKeySetInternalCallbackIterator`.
+
+To run a benchmark run the following command from the root folder of this package:
+
+```sh
+go test -benchmem -gcflags=-N -run="^\$" ./kdb -bench "^(BenchmarkKeySetSliceRangeIterator)\$"
+```
+
+## Use Elektra
+
+### In your Application
+
+First _go get_ the package like you are used to with Go.
 
 `go get github.com/ElektraInitiative/go-elektra/kdb`
 
-Here is an example how you can use Elektra in your Go application.
+Here is an example how you can use Elektra in your Go application. 
 Before you start create a key via the `kdb` command-line tool:
 
-// TODO REVIEW: In Elektra all keys should be lower-case without any separator (except /), e.g. you could use user/go/elektra here.
-
-`kdb set user/go-elektra 'Hello World!'`
+`kdb set user/go/elektra 'Hello World!'`
 
 Save the following code to a file, e.g.: `elektra.go` and run it via
 
@@ -58,27 +71,36 @@ import (
 )
 
 func main() {
-	// TODO API REVIEW: Why here CreateKeySet and not NewKeySet?
-	ks := kdb.CreateKeySet()
-	keyName := "/go-elektra"
+	ks := kdb.NewKeySet()
+	keyName := "/go/elektra"
 
-	// TODO API REVIEW: Separated New and Open necessary?
 	handle := kdb.New()
-	_ = handle.Open()
 
-	parentKey, _ := kdb.CreateKey("user")
+	// Open the handle, this is a separate step since there can be different implementations of the KDB interface.
+	_ = handle.Open()
+	defer handle.Close()
+
+	parentKey, _ := kdb.NewKey("user")
 	_, _ = handle.Get(ks, parentKey)
 
 	foundKey := ks.LookupByName(keyName)
 
 	if foundKey == nil {
-		fmt.Printf("Key %q not found, please run the following command to create it:\nkdb set user/go-elektra 'Hello World!'\n", keyName)
+		fmt.Printf("Key %q not found, please run the following command to create it:\nkdb set user/go/elektra 'Hello World!'\n", keyName)
 	} else {
 		value := foundKey.Value()
 		fmt.Printf("Value of %q is: %s\n", keyName, value)
 	}
 }
 ```
+
+### Test examples
+
+The test files (`*_test.go`) are also a good source if you want to get to know how to use these bindings.
+
+* [kdb tests](./kdb/kdb_test.go)
+* [keyset tests](./kdb/keyset_test.go)
+* [key tests](./kdb/key_test.go)
 
 ## Documentation
 

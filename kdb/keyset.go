@@ -1,6 +1,5 @@
 package kdb
 
-// TODO REVIEW: cleanup?
 // #include <kdb.h>
 // #include <stdlib.h>
 //
@@ -22,19 +21,17 @@ type KeySet interface {
 	Append(keySet KeySet) int
 	AppendKey(key Key) int
 	Remove(key Key) Key
+	RemoveByName(name string) Key
 
 	Pop() Key
 	Head() Key
 	Tail() Key
-	// TODO REVIEW API: We should remove the internal iterator and provide an external instead
-	Next() Key
 	Len() int
-
-	// TODO REVIEW API: We should remove the internal iterator and provide an external instead
-	Rewind()
 
 	Cut(key Key) KeySet
 
+	Each(iterator Iterator)
+	Slice() []Key
 	KeyNames() []string
 
 	NeedSync() bool
@@ -46,24 +43,47 @@ type KeySet interface {
 }
 
 type ckeySet struct {
-	ptr *C.struct__KeySet
+	ptr  *C.struct__KeySet
+	keys map[*C.struct__Key]*ckey
 }
 
-// TODO REVIEW API: Why not NewKeySet?
-// CreateKeySet creates a new KeySet.
-func CreateKeySet(keys ...Key) KeySet {
+// NewKeySet creates a new KeySet.
+func NewKeySet(keys ...Key) KeySet {
 	size := len(keys)
-	ks := &ckeySet{C.ksNewWrapper(C.ulong(size))}
-
-	runtime.SetFinalizer(ks, freeKeySet)
+	ks := wrapKeySet(C.ksNewWrapper(C.ulong(size)))
 
 	for _, k := range keys {
-		if k != nil {
-			ks.AppendKey(k)
-		}
+		ks.AppendKey(k)
 	}
 
 	return ks
+}
+
+func wrapKeySet(ks *C.struct__KeySet) *ckeySet {
+	if ks == nil {
+		return nil
+	}
+
+	keySet := &ckeySet{
+		ptr:  ks,
+		keys: make(map[*C.struct__Key]*ckey),
+	}
+
+	keySet.loop(func(key Key) {
+		keySet.rememberKey(key.(*ckey))
+	})
+
+	runtime.SetFinalizer(keySet, freeKeySet)
+
+	return keySet
+}
+
+// freeKeySet frees the keySet's memory when it
+// goes out of scope.
+func freeKeySet(k *ckeySet) {
+	if k.ptr != nil {
+		C.ksDel(k.ptr)
+	}
 }
 
 func toCKeySet(keySet KeySet) (*ckeySet, error) {
@@ -74,40 +94,42 @@ func toCKeySet(keySet KeySet) (*ckeySet, error) {
 	ckeySet, ok := keySet.(*ckeySet)
 
 	if !ok {
-		// TODO REVIEW: What is a ckeySet? (Error message not helpful)
-		return nil, errors.New("only pointer to ckeySet struct allowed")
+		return nil, errors.New("only instances of KeySet that were created by elektra/kdb may be passed to this function")
 	}
 
 	return ckeySet, nil
 }
 
-// TODO REVIEW: Confusing description of Append
-
-// Append adds a KeySet and returns the new length of the KeySet
-// after appending or -1 if keySet is not a pointer of type ckeySet.
-func (ks *ckeySet) Append(keySet KeySet) int {
-	cKeySet, err := toCKeySet(keySet)
+// Append appends all Keys from `other` to this KeySet and returns the
+// new length of this KeySet or -1 if `other` is not a KeySet which was
+// created by elektra/kdb.
+func (ks *ckeySet) Append(other KeySet) int {
+	ckeySet, err := toCKeySet(other)
 
 	if err != nil {
 		return -1
 	}
 
-	ret := int(C.ksAppend(ks.ptr, cKeySet.ptr))
+	ret := int(C.ksAppend(ks.ptr, ckeySet.ptr))
+
+	ckeySet.loop(func(key Key) {
+		ks.rememberKey(key.(*ckey))
+	})
 
 	return ret
 }
 
-// TODO REVIEW: Confusing description of AppendKey
-
-// AppendKey adds a Key to the KeySet  and returns the new
-// length of the KeySet after appending or -1 if the key is
-// not a pointer of type ckey.
+// AppendKey appends a Key to this KeySet and returns the new
+// length of this KeySet or -1 if the key is
+// not a Key created by elektra/kdb.
 func (ks *ckeySet) AppendKey(key Key) int {
 	ckey, err := toCKey(key)
 
 	if err != nil {
 		return -1
 	}
+
+	ks.rememberKey(ckey)
 
 	size := int(C.ksAppendKey(ks.ptr, ckey.ptr))
 
@@ -129,19 +151,94 @@ func (ks *ckeySet) Cut(key Key) KeySet {
 		return nil
 	}
 
-	newKs := C.ksCut(ks.ptr, k.ptr)
+	newKs := wrapKeySet(C.ksCut(ks.ptr, k.ptr))
 
-	return &ckeySet{newKs}
+	newKs.loop(func(key Key) {
+		ks.forgetKey(k.ptr)
+	})
+
+	return newKs
+}
+
+// Slice returns a slice containing all Keys.
+func (ks *ckeySet) Slice() []Key {
+	var keys []Key
+
+	ks.loop(func(k Key) {
+		keys = append(keys, k)
+	})
+
+	return keys
+}
+
+// Iterator is a function that loops over Keys.
+type Iterator func(k Key)
+
+// toKey returns a cached Key that wraps the *C.struct__Key -
+// or creates a new wrapped *ckey.
+func (ks *ckeySet) toKey(k *C.struct__Key) *ckey {
+	if k == nil {
+		return nil
+	}
+
+	if key := ks.keys[k]; key != nil {
+		return key
+	} else {
+		return wrapKey(k)
+	}
+}
+
+// rememberKey remembers the relationship between instances of *ckey
+// and *C.struct__Key. This is important because we don't want multiple
+// instances of *ckey pointing to the same *C.struct__Key since this
+// causes troubles with Garbage Collection, which runs in parallel and
+// freeing of keys is not threadsafe.
+func (ks *ckeySet) rememberKey(key *ckey) {
+	ks.keys[key.ptr] = key
+}
+
+// forgetKey forgets about the reference *ckey <-> *C.struct__Key. Calls this
+// when a key gets removed from the underlying *ckeyset.
+func (ks *ckeySet) forgetKey(k *C.struct__Key) *ckey {
+	if k == nil {
+		return nil
+	}
+
+	key := ks.keys[k]
+
+	delete(ks.keys, k)
+
+	return key
+}
+
+// loop provides an easy way of looping of the keyset by passing
+// an iterator function.
+func (ks *ckeySet) loop(iterator Iterator) {
+	for cursor := C.cursor_t(0); C.ksAtCursor(ks.ptr, cursor) != nil; cursor++ {
+		key := ks.toKey(C.ksAtCursor(ks.ptr, cursor))
+		iterator(key)
+	}
+}
+
+// Loop accepts an `Iterator` that loops over every Key in the KeySet.
+func (ks *ckeySet) Each(iterator Iterator) {
+	ks.loop(iterator)
+}
+
+// KeyNames returns a slice of the name of every Key in the KeySet.
+func (ks *ckeySet) KeyNames() []string {
+	var keys []string
+
+	ks.loop(func(k Key) {
+		keys = append(keys, k.Name())
+	})
+
+	return keys
 }
 
 // Head returns the first Element of the KeySet - or nil if the KeySet is empty.
 func (ks *ckeySet) Head() Key {
-	return newKey(C.ksHead(ks.ptr))
-}
-
-// Rewind resets the internal KeySet cursor.
-func (ks *ckeySet) Rewind() {
-	C.ksRewind(ks.ptr)
+	return ks.toKey(C.ksHead(ks.ptr))
 }
 
 // Copy copies the entire KeySet to the passed KeySet.
@@ -159,12 +256,14 @@ func (ks *ckeySet) Copy(keySet KeySet) {
 
 // Tail returns the last Element of the KeySet - or nil if empty.
 func (ks *ckeySet) Tail() Key {
-	return newKey(C.ksTail(ks.ptr))
+	return ks.toKey(C.ksTail(ks.ptr))
 }
 
 // Pop removes and returns the last Element that was added to the KeySet.
 func (ks *ckeySet) Pop() Key {
-	return newKey(C.ksPop(ks.ptr))
+	key := C.ksPop(ks.ptr)
+
+	return ks.forgetKey(key)
 }
 
 // Remove removes a key from the KeySet and returns it if found.
@@ -177,23 +276,33 @@ func (ks *ckeySet) Remove(key Key) Key {
 
 	removed := C.ksLookup(ks.ptr, ckey.ptr, C.KDB_O_POP)
 
-	return newKey(removed)
+	return ks.forgetKey(removed)
+}
+
+// RemoveByName removes a key by its name from the KeySet and returns it if found.
+func (ks *ckeySet) RemoveByName(name string) Key {
+	n := C.CString(name)
+	defer C.free(unsafe.Pointer(n))
+
+	key := C.ksLookupByName(ks.ptr, n, C.KDB_O_POP)
+
+	return ks.forgetKey(key)
 }
 
 // Clear removes all Keys from the KeySet.
 func (ks *ckeySet) Clear() {
-	C.ksClear(ks.ptr)
-}
+	root, _ := newKey("/")
 
-// Next moves the Cursor to the next Key and returns it.
-func (ks *ckeySet) Next() Key {
-	key := newKey(C.ksNext(ks.ptr))
+	ks.loop(func(k Key) {
+		ks.forgetKey(k.(*ckey).ptr)
+	})
 
-	if key == nil {
-		return nil
-	}
+	// don't use `ksClear` because it is internal
+	// and renders the KeySet unusable
+	newKs := C.ksCut(ks.ptr, root.ptr)
 
-	return key
+	// we don't need this keyset
+	C.ksDel(newKs)
 }
 
 // Lookup searches the KeySet for a certain Key.
@@ -204,7 +313,7 @@ func (ks *ckeySet) Lookup(key Key) Key {
 		return nil
 	}
 
-	if foundKey := newKey(C.ksLookup(ks.ptr, ckey.ptr, 0)); foundKey != nil {
+	if foundKey := ks.toKey(C.ksLookup(ks.ptr, ckey.ptr, 0)); foundKey != nil {
 		return foundKey
 	}
 
@@ -216,24 +325,11 @@ func (ks *ckeySet) LookupByName(name string) Key {
 	n := C.CString(name)
 	defer C.free(unsafe.Pointer(n))
 
-	if key := newKey(C.ksLookupByName(ks.ptr, n, 0)); key != nil {
+	if key := ks.toKey(C.ksLookupByName(ks.ptr, n, 0)); key != nil {
 		return key
 	}
 
 	return nil
-}
-
-// KeyNames returns a slice of the name of every Key in the KeySet.
-func (ks *ckeySet) KeyNames() []string {
-	keys := []string{}
-
-	ks.Rewind()
-
-	for key := ks.Next(); key != nil; key = ks.Next() {
-		keys = append(keys, key.Name())
-	}
-
-	return keys
 }
 
 // Len returns the length of the KeySet.
@@ -241,6 +337,28 @@ func (ks *ckeySet) Len() int {
 	return int(C.ksGetSize(ks.ptr))
 }
 
-func freeKeySet(k *ckeySet) {
-	C.ksDel(k.ptr)
+/*****
+	The following functions are for benchmarks only
+	and should not be exported
+*****/
+
+func (ks *ckeySet) loopInternal(iterator Iterator) {
+	cursor := C.ksGetCursor(ks.ptr)
+	defer C.ksSetCursor(ks.ptr, cursor)
+
+	next := func() Key {
+		key := ks.toKey(C.ksNext(ks.ptr))
+
+		if key == nil {
+			return nil
+		}
+
+		return key
+	}
+
+	C.ksRewind(ks.ptr)
+
+	for key := next(); key != nil; key = next() {
+		iterator(key)
+	}
 }

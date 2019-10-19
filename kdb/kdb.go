@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// KDB is an interface to the Elektra library.
+// KDB (key data base) access functions
 type KDB interface {
 	Open() error
 	Close() error
@@ -31,7 +31,7 @@ func New() KDB {
 // Open creates a handle to the kdb library,
 // this is mandatory to Get / Set Keys.
 func (e *kdbC) Open() error {
-	key, err := createKey("")
+	key, err := newKey("")
 
 	if err != nil {
 		return err
@@ -50,7 +50,7 @@ func (e *kdbC) Open() error {
 
 // Close closes the kdb handle.
 func (e *kdbC) Close() error {
-	key, err := createKey("")
+	key, err := newKey("")
 
 	if err != nil {
 		return err
@@ -66,6 +66,8 @@ func (e *kdbC) Close() error {
 }
 
 // Get retrieves parentKey and all Keys beneath it.
+// Returns true if Keys have been loaded or updated and an
+// error if something went wrong.
 func (e *kdbC) Get(keySet KeySet, parentKey Key) (bool, error) {
 	cKey, err := toCKey(parentKey)
 
@@ -89,6 +91,8 @@ func (e *kdbC) Get(keySet KeySet, parentKey Key) (bool, error) {
 }
 
 // Set sets all Keys of a KeySet.
+// Returns true if any of the keys have changed and an error if
+// something happened (such as a conflict).
 func (e *kdbC) Set(keySet KeySet, parentKey Key) (bool, error) {
 	cKey, err := toCKey(parentKey)
 
@@ -111,21 +115,23 @@ func (e *kdbC) Set(keySet KeySet, parentKey Key) (bool, error) {
 	return changed == 1, nil
 }
 
-// Version returns the current version of Elektra
-// in the format Major.Minor.Micro
+// Version `Get`s the current version of Elektra from
+// the "system/elektra/version/constants/KDB_VERSION" key
+// in the format Major.Minor.Micro, be aware that this can
+// lead to unexpected state-changes.
 func (e *kdbC) Version() (string, error) {
-	k, err := CreateKey("system/elektra/version")
+	k, err := NewKey("system/elektra/version")
 
 	if err != nil {
 		return "", err
 	}
 
-	ks := CreateKeySet()
+	ks := NewKeySet()
 
 	_, err = e.Get(ks, k)
 
 	versionKey := ks.LookupByName("system/elektra/version/constants/KDB_VERSION")
-	version := versionKey.Value()
+	version := versionKey.String()
 
 	return version, nil
 }

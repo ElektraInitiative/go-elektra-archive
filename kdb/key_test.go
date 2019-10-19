@@ -11,13 +11,13 @@ import (
 )
 
 func TestName(t *testing.T) {
-	firstName := "user/tests/go-elektra/name/1"
-	k, err := elektra.CreateKey(firstName)
+	firstName := "user/tests/go/elektra/name/1"
+	k, err := elektra.NewKey(firstName)
 
 	Check(t, err, "could not create key")
 	Assert(t, k.Name() == firstName, "wrong key name")
 
-	secondName := "user/tests/go-elektra/name/2"
+	secondName := "user/tests/go/elektra/name/2"
 	err = k.SetName(secondName)
 
 	Check(t, err, "could not set key name")
@@ -26,90 +26,122 @@ func TestName(t *testing.T) {
 
 func TestString(t *testing.T) {
 	testValue := "Hello World"
-	k, err := elektra.CreateKey("user/tests/go-elektra/string", testValue)
 
+	k, err := elektra.NewKey("user/tests/go/elektra/string", testValue)
 	Check(t, err, "could not create key")
 
-	val := k.Value()
-
+	val := k.String()
 	Assertf(t, val == testValue, "Key.GetString() did not match %q", testValue)
 }
 
-func TestBoolean(t *testing.T) {
-	k, err := elektra.CreateKey("user/tests/go-elektra/boolean")
-
-	Check(t, err, "could not create key")
-
-	testValue := true
-
-	err = k.SetBoolean(testValue)
-
-	Check(t, err, "SetBoolean failed")
-
-	val := k.Boolean()
-
-	Assertf(t, val == testValue, "Key.Boolean() %t did not match %t", val, testValue)
-
-	testValue = !testValue
-
-	err = k.SetBoolean(testValue)
-
-	Check(t, err, "SetBoolean failed")
-
-	val = k.Boolean()
-
-	Assertf(t, val == testValue, "Key.Boolean() %t did not match %t", val, testValue)
+var bytesTests = []struct {
+	keyName  string
+	key2     string
+	expected string
+}{
+	{"user/foo/bar", "user/foo/bar2", "user/foo"},
+	{"proc/foo/bar", "user/foo/bar", "/foo/bar"},
+	{"user/foo/bar", "user/bar/foo", "user"},
+	{"proc/bar/foo", "user/foo/bar", ""},
 }
 
-// TODO REVIEW: Not all types tested?
-
 func TestBytes(t *testing.T) {
-	k, err := elektra.CreateKey("user/tests/go-elektra/bytes")
+	values := [][]byte{
+		make([]byte, 10),
+		make([]byte, 0),
+		[]byte("Test SetBytes"),
+	}
 
-	Check(t, err, "could not create key")
+	rand.Read(values[0])
 
-	// TODO REVIEW: what about byte array of length 0?
-	testValue := make([]byte, 10)
-	rand.Read(testValue)
+	for testcase, want := range values {
+		k, err := elektra.NewKey("user/tests/go/elektra/bytes")
+		Check(t, err, "could not create key")
 
-	err = k.SetBytes(testValue)
+		err = k.SetBytes(want)
+		Check(t, err, "SetBytes failed")
 
-	Check(t, err, "")
-
-	val := k.Bytes()
-
-	Assertf(t, bytes.Compare(val, testValue) == 0, "Key.Bytes() %X did not match %X", val, testValue)
+		got := k.Bytes()
+		Assertf(t, bytes.Compare(got, want) == 0, "Testcase %d: Key.Bytes() %X did not match %X", testcase, got, want)
+	}
 }
 
 func TestMeta(t *testing.T) {
-	k, err := elektra.CreateKey("user/tests/go-elektra/meta", "Hello World")
-
+	k, err := elektra.NewKey("user/tests/go/elektra/meta", "Hello World")
 	Check(t, err, "could not create key")
 
 	err = k.SetMeta("meta", "value")
-
 	Check(t, err, "could not set meta")
 
 	val := k.Meta("meta")
-
 	Assert(t, val == "value", "Key.Meta() did not return the correct value")
+}
 
-	// TODO REVIEW: Testing iterating meta?
+func keyWithMetaKeys(t *testing.T, name string, keyValues map[string]string) elektra.Key {
+	t.Helper()
+
+	key, err := elektra.NewKey(name)
+	Check(t, err, "could not create key")
+
+	for metaName, value := range keyValues {
+		err := key.SetMeta(metaName, value)
+		Checkf(t, err, "could not set meta value: %v", err)
+	}
+
+	return key
+}
+
+func TestMetaMap(t *testing.T) {
+	keyValues := map[string]string{
+		"foo": "foo",
+		"bar": "bar",
+		"baz": "baz",
+	}
+
+	key := keyWithMetaKeys(t, "user/tests/go/elektra/meta", keyValues)
+
+	metaMap := key.MetaMap()
+
+	for k, v := range keyValues {
+		metaKey, ok := metaMap[k]
+		Assertf(t, ok, "MetaMap() does not contain the Key %q", k)
+		Assert(t, metaKey == v, "MetaMap contans the wrong Value")
+	}
+
+	Assertf(t, len(metaMap) == len(keyValues), "Len(MetaSlice()) is unexpected, got: %d, want: %d", len(metaMap), len(keyValues))
+}
+
+func TestMetaSlice(t *testing.T) {
+	keyValues := map[string]string{
+		"foo": "foo",
+		"bar": "bar",
+		"baz": "baz",
+	}
+
+	key := keyWithMetaKeys(t, "user/tests/go/elektra/meta", keyValues)
+
+	metaSlice := key.MetaSlice()
+
+	for _, metaKey := range metaSlice {
+		value, ok := keyValues[metaKey.Name()]
+		Assert(t, ok, "MetaSlice() contains wrong Key")
+		Assert(t, value == metaKey.String(), "MetaSlice returns Key with wrong Value")
+	}
+
+	Assertf(t, len(metaSlice) == len(keyValues), "Len(MetaSlice()) is unexpected, got: %d, want: %d", len(metaSlice), len(keyValues))
 }
 
 func TestNamespace(t *testing.T) {
-	key, _ := elektra.CreateKey("user/tests/go-elektra/namespace")
+	key, _ := elektra.NewKey("user/tests/go/elektra/namespace")
 
-	namespace := key.Namespace()
 	expected := "user"
-
+	namespace := key.Namespace()
 	Assertf(t, namespace == expected, "Namespace be %q but is %q", expected, namespace)
 
-	key, _ = elektra.CreateKey("/go-elektra/namespace")
+	key, _ = elektra.NewKey("/go-elektra/namespace")
 
-	namespace = key.Namespace()
 	expected = ""
-
+	namespace = key.Namespace()
 	Assertf(t, namespace == expected, "Namespace be %q but is %q", expected, namespace)
 }
 
@@ -127,11 +159,10 @@ var commonKeyNameTests = []struct {
 func TestCommonKeyName(t *testing.T) {
 	for _, test := range commonKeyNameTests {
 		t.Run(fmt.Sprintf("(%q, %q)", test.key1, test.key2), func(t *testing.T) {
-			key1, _ := elektra.CreateKey(test.key1)
-			key2, _ := elektra.CreateKey(test.key2)
+			key1, _ := elektra.NewKey(test.key1)
+			key2, _ := elektra.NewKey(test.key2)
 
 			commonName := elektra.CommonKeyName(key1, key2)
-
 			Assertf(t, commonName == test.expected, "commonName should be %q but is %q", test.expected, commonName)
 		})
 	}
