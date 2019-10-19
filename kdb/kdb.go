@@ -66,7 +66,8 @@ func (e *kdbC) Close() error {
 }
 
 // Get retrieves parentKey and all Keys beneath it.
-// Returns true if Keys have been loaded or updated.
+// Returns true if Keys have been loaded or updated and an
+// error if something went wrong.
 func (e *kdbC) Get(keySet KeySet, parentKey Key) (bool, error) {
 	cKey, err := toCKey(parentKey)
 
