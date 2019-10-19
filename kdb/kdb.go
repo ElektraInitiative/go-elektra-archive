@@ -19,18 +19,18 @@ type KDB interface {
 	Version() (string, error)
 }
 
-type kdbC struct {
+type KdbC struct {
 	handle *C.struct__KDB
 }
 
 // New returns a new KDB instance.
 func New() KDB {
-	return &kdbC{}
+	return &KdbC{}
 }
 
 // Open creates a handle to the kdb library,
 // this is mandatory to Get / Set Keys.
-func (e *kdbC) Open() error {
+func (e *KdbC) Open() error {
 	key, err := newKey("")
 
 	if err != nil {
@@ -49,7 +49,7 @@ func (e *kdbC) Open() error {
 }
 
 // Close closes the kdb handle.
-func (e *kdbC) Close() error {
+func (e *KdbC) Close() error {
 	key, err := newKey("")
 
 	if err != nil {
@@ -68,7 +68,7 @@ func (e *kdbC) Close() error {
 // Get retrieves parentKey and all Keys beneath it.
 // Returns true if Keys have been loaded or updated and an
 // error if something went wrong.
-func (e *kdbC) Get(keySet KeySet, parentKey Key) (bool, error) {
+func (e *KdbC) Get(keySet KeySet, parentKey Key) (bool, error) {
 	cKey, err := toCKey(parentKey)
 
 	if err != nil {
@@ -93,7 +93,7 @@ func (e *kdbC) Get(keySet KeySet, parentKey Key) (bool, error) {
 // Set sets all Keys of a KeySet.
 // Returns true if any of the keys have changed and an error if
 // something happened (such as a conflict).
-func (e *kdbC) Set(keySet KeySet, parentKey Key) (bool, error) {
+func (e *KdbC) Set(keySet KeySet, parentKey Key) (bool, error) {
 	cKey, err := toCKey(parentKey)
 
 	if err != nil {
@@ -119,7 +119,7 @@ func (e *kdbC) Set(keySet KeySet, parentKey Key) (bool, error) {
 // the "system/elektra/version/constants/KDB_VERSION" key
 // in the format Major.Minor.Micro, be aware that this can
 // lead to unexpected state-changes.
-func (e *kdbC) Version() (string, error) {
+func (e *KdbC) Version() (string, error) {
 	k, err := NewKey("system/elektra/version")
 
 	if err != nil {
