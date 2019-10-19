@@ -49,7 +49,7 @@ go test -benchmem -gcflags=-N -run="^\$" ./kdb -bench "^(BenchmarkKeySetSliceRan
 
 First _go get_ the package like you are used to with Go.
 
-`go get github.com/ElektraInitiative/go-elektra/kdb`
+`go get go.libelektra.org`
 
 Here is an example how you can use Elektra in your Go application. 
 Before you start create a key via the `kdb` command-line tool:
@@ -67,7 +67,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/ElektraInitiative/go-elektra/kdb"
+
+	"go.libelektra.org/kdb"
 )
 
 func main() {
@@ -104,7 +105,7 @@ The test files (`*_test.go`) are also a good source if you want to get to know h
 
 ## Documentation
 
-The documentation can be viewed on [godoc.org](https://godoc.org/github.com/ElektraInitiative/go-elektra/kdb)
+The documentation can be viewed on [godoc.org](https://godoc.org/go.libelektra.org/kdb)
 
 ## Troubleshooting
 
@@ -125,7 +126,7 @@ If you get an error message like this you most likely have whitespace in your bu
 It appears that go currently does not support whitespaces in package-config
 (issues https://github.com/golang/go/issues/7906, https://github.com/golang/go/issues/16455).
 
-### Cannot find package "github.com/ElektraInitiative/go-elektra/kdb" 
+### Cannot find package "go.libelektra.org/kdb" 
 
 Make sure your version of Go is > `1.11` and either set the ENV variable `GO111MODULE=on` or run `go mod init`
 in the folder containing your go code.

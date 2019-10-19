@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/ElektraInitiative/go-elektra/test"
+	. "go.libelektra.org/test"
+
 )
 
 func setupInMemoryKeySet(b *testing.B, count int) *CKeySet {

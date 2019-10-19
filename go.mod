@@ -1,4 +1,4 @@
-module github.com/ElektraInitiative/go-elektra
+module go.libelektra.org
 
 go 1.12
 
