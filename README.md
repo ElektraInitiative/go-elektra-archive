@@ -76,7 +76,7 @@ func main() {
 
 	handle := kdb.New()
 
-	// Open the handle, this is a separate step since there can be different implementations of the KDB interface. One that would use the terminal application (not implemented) instead of the C Library could check if the kdb can is available on the $PATH.
+	// Open the handle, this is a separate step since there can be different implementations of the KDB interface.
 	_ = handle.Open()
 	defer handle.Close()
 
