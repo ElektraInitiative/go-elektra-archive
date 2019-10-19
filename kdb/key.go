@@ -53,11 +53,11 @@ type Key interface {
 	SetBytes(value []byte) error
 }
 
-type ckey struct {
+type CKey struct {
 	ptr *C.struct__Key
 }
 
-func errFromKey(k *ckey) error {
+func errFromKey(k *CKey) error {
 	description := k.Meta("error/description")
 	number := k.Meta("error/number")
 
@@ -75,8 +75,8 @@ func NewKey(name string, value ...interface{}) (Key, error) {
 
 // newKey is not exported and should only be used internally in this package because the C pointer should not be exposed to packages using these bindings
 // Its useful since the C pointer can be used directly without having to cast from `Key` first.
-func newKey(name string, value ...interface{}) (*ckey, error) {
-	var key *ckey
+func newKey(name string, value ...interface{}) (*CKey, error) {
+	var key *CKey
 
 	n := C.CString(name)
 	defer C.free(unsafe.Pointer(n))
@@ -103,12 +103,12 @@ func newKey(name string, value ...interface{}) (*ckey, error) {
 	return key, nil
 }
 
-func wrapKey(k *C.struct__Key) *ckey {
+func wrapKey(k *C.struct__Key) *CKey {
 	if k == nil {
 		return nil
 	}
 
-	key := &ckey{ptr: k}
+	key := &CKey{ptr: k}
 	runtime.SetFinalizer(key, freeKey)
 
 	C.keyIncRef(k)
@@ -117,7 +117,7 @@ func wrapKey(k *C.struct__Key) *ckey {
 }
 
 // freeKey frees the resources of the Key.
-func freeKey(k *ckey) {
+func freeKey(k *CKey) {
 	if k.ptr == nil {
 		return
 	}
@@ -126,39 +126,39 @@ func freeKey(k *ckey) {
 	C.keyDel(k.ptr)
 }
 
-func toCKey(key Key) (*ckey, error) {
+func toCKey(key Key) (*CKey, error) {
 	if key == nil {
 		return nil, errors.New("key is nil")
 	}
 
-	ckey, ok := key.(*ckey)
+	CKey, ok := key.(*CKey)
 
 	if !ok {
-		return nil, errors.New("only pointer to ckey struct allowed")
+		return nil, errors.New("only pointer to CKey struct allowed")
 	}
 
-	return ckey, nil
+	return CKey, nil
 }
 
 // BaseName returns the basename of the Key.
 // Some examples:
 // - BaseName of system/some/keyname is keyname
 // - BaseName of "user/tmp/some key" is "some key"
-func (k *ckey) BaseName() string {
+func (k *CKey) BaseName() string {
 	name := C.keyBaseName(k.ptr)
 
 	return C.GoString(name)
 }
 
 // Name returns the name of the Key.
-func (k *ckey) Name() string {
+func (k *CKey) Name() string {
 	name := C.keyName(k.ptr)
 
 	return C.GoString(name)
 }
 
 // SetBytes sets the value of a key to a byte slice.
-func (k *ckey) SetBytes(value []byte) error {
+func (k *CKey) SetBytes(value []byte) error {
 	v := C.CBytes(value)
 	defer C.free(unsafe.Pointer(v))
 
@@ -172,7 +172,7 @@ func (k *ckey) SetBytes(value []byte) error {
 }
 
 // SetString sets the string of a key.
-func (k *ckey) SetString(value string) error {
+func (k *CKey) SetString(value string) error {
 	v := C.CString(value)
 	defer C.free(unsafe.Pointer(v))
 
@@ -183,7 +183,7 @@ func (k *ckey) SetString(value string) error {
 
 // SetBoolean sets the string of a key to a boolean
 // where true is represented as "1" and false as "0".
-func (k *ckey) SetBoolean(value bool) error {
+func (k *CKey) SetBoolean(value bool) error {
 	strValue := "0"
 
 	if value {
@@ -194,7 +194,7 @@ func (k *ckey) SetBoolean(value bool) error {
 }
 
 // SetName sets the name of the Key.
-func (k *ckey) SetName(name string) error {
+func (k *CKey) SetName(name string) error {
 	n := C.CString(name)
 	defer C.free(unsafe.Pointer(n))
 
@@ -206,7 +206,7 @@ func (k *ckey) SetName(name string) error {
 }
 
 // Bytes returns the value of the Key as a byte slice.
-func (k *ckey) Bytes() []byte {
+func (k *CKey) Bytes() []byte {
 	size := (C.ulong)(C.keyGetValueSize(k.ptr))
 
 	buffer := unsafe.Pointer((*C.char)(C.malloc(size)))
@@ -224,14 +224,14 @@ func (k *ckey) Bytes() []byte {
 }
 
 // String returns the string value of the Key.
-func (k *ckey) String() string {
+func (k *CKey) String() string {
 	str := C.keyString(k.ptr)
 
 	return C.GoString(str)
 }
 
 // SetMeta sets the meta value of a Key.
-func (k *ckey) SetMeta(name, value string) error {
+func (k *CKey) SetMeta(name, value string) error {
 	cName, cValue := C.CString(name), C.CString(value)
 
 	defer C.free(unsafe.Pointer(cName))
@@ -247,7 +247,7 @@ func (k *ckey) SetMeta(name, value string) error {
 }
 
 // DeleteMeta deletes a meta Key.
-func (k *ckey) RemoveMeta(name string) error {
+func (k *CKey) RemoveMeta(name string) error {
 	cName := C.CString(name)
 
 	defer C.free(unsafe.Pointer(cName))
@@ -262,7 +262,7 @@ func (k *ckey) RemoveMeta(name string) error {
 }
 
 // Meta retrieves the Meta value of a Key.
-func (k *ckey) Meta(name string) string {
+func (k *CKey) Meta(name string) string {
 	cName := C.CString(name)
 
 	defer C.free(unsafe.Pointer(cName))
@@ -277,7 +277,7 @@ func (k *ckey) Meta(name string) string {
 }
 
 // NextMeta returns the next meta Key.
-func (k *ckey) NextMeta() Key {
+func (k *CKey) NextMeta() Key {
 	key := wrapKey(C.keyNextMeta(k.ptr))
 
 	if key == nil {
@@ -288,8 +288,8 @@ func (k *ckey) NextMeta() Key {
 }
 
 // MetaSlice builds a slice of all meta Keys.
-func (k *ckey) MetaSlice() []Key {
-	dup := k.Duplicate().(*ckey)
+func (k *CKey) MetaSlice() []Key {
+	dup := k.Duplicate().(*CKey)
 	C.keyRewindMeta(dup.ptr)
 
 	var metaKeys []Key
@@ -302,8 +302,8 @@ func (k *ckey) MetaSlice() []Key {
 }
 
 // MetaMap builds a Key/Value map of all meta Keys.
-func (k *ckey) MetaMap() map[string]string {
-	dup := k.Duplicate().(*ckey)
+func (k *CKey) MetaMap() map[string]string {
+	dup := k.Duplicate().(*CKey)
 	C.keyRewindMeta(dup.ptr)
 
 	m := make(map[string]string)
@@ -316,12 +316,12 @@ func (k *ckey) MetaMap() map[string]string {
 }
 
 // Duplicate duplicates a Key.
-func (k *ckey) Duplicate() Key {
+func (k *CKey) Duplicate() Key {
 	return wrapKey(C.keyDup(k.ptr))
 }
 
 // IsBelow checks if this key is below the `other` key.
-func (k *ckey) IsBelow(other Key) bool {
+func (k *CKey) IsBelow(other Key) bool {
 	otherKey, err := toCKey(other)
 
 	if err != nil {
@@ -334,7 +334,7 @@ func (k *ckey) IsBelow(other Key) bool {
 }
 
 // IsBelowOrSame checks if this key is below or the same as the `other` key.
-func (k *ckey) IsBelowOrSame(other Key) bool {
+func (k *CKey) IsBelowOrSame(other Key) bool {
 	otherKey, err := toCKey(other)
 
 	if err != nil {
@@ -347,7 +347,7 @@ func (k *ckey) IsBelowOrSame(other Key) bool {
 }
 
 // IsDirectlyBelow checks if this key is directly below the `other` Key.
-func (k *ckey) IsDirectlyBelow(other Key) bool {
+func (k *CKey) IsDirectlyBelow(other Key) bool {
 	otherKey, err := toCKey(other)
 
 	if err != nil {
@@ -363,14 +363,14 @@ func (k *ckey) IsDirectlyBelow(other Key) bool {
 // < 0 if this key is less than `other` Key and
 // > 0 if this key is greater than `other` Key.
 // This function defines the sorting order of a KeySet.
-func (k *ckey) Compare(other Key) int {
+func (k *CKey) Compare(other Key) int {
 	otherKey, _ := toCKey(other)
 
 	return int(C.keyCmp(k.ptr, otherKey.ptr))
 }
 
 // Namespace returns the namespace of a Key.
-func (k *ckey) Namespace() string {
+func (k *CKey) Namespace() string {
 	name := k.Name()
 	index := strings.Index(name, "/")
 

@@ -42,9 +42,9 @@ type KeySet interface {
 	LookupByName(name string) Key
 }
 
-type ckeySet struct {
+type CKeySet struct {
 	ptr  *C.struct__KeySet
-	keys map[*C.struct__Key]*ckey
+	keys map[*C.struct__Key]*CKey
 }
 
 // NewKeySet creates a new KeySet.
@@ -59,18 +59,18 @@ func NewKeySet(keys ...Key) KeySet {
 	return ks
 }
 
-func wrapKeySet(ks *C.struct__KeySet) *ckeySet {
+func wrapKeySet(ks *C.struct__KeySet) *CKeySet {
 	if ks == nil {
 		return nil
 	}
 
-	keySet := &ckeySet{
+	keySet := &CKeySet{
 		ptr:  ks,
-		keys: make(map[*C.struct__Key]*ckey),
+		keys: make(map[*C.struct__Key]*CKey),
 	}
 
 	keySet.loop(func(key Key) {
-		keySet.rememberKey(key.(*ckey))
+		keySet.rememberKey(key.(*CKey))
 	})
 
 	runtime.SetFinalizer(keySet, freeKeySet)
@@ -80,18 +80,18 @@ func wrapKeySet(ks *C.struct__KeySet) *ckeySet {
 
 // freeKeySet frees the keySet's memory when it
 // goes out of scope.
-func freeKeySet(k *ckeySet) {
+func freeKeySet(k *CKeySet) {
 	if k.ptr != nil {
 		C.ksDel(k.ptr)
 	}
 }
 
-func toCKeySet(keySet KeySet) (*ckeySet, error) {
+func toCKeySet(keySet KeySet) (*CKeySet, error) {
 	if keySet == nil {
 		return nil, errors.New("keyset is nil")
 	}
 
-	ckeySet, ok := keySet.(*ckeySet)
+	ckeySet, ok := keySet.(*CKeySet)
 
 	if !ok {
 		return nil, errors.New("only instances of KeySet that were created by elektra/kdb may be passed to this function")
@@ -103,7 +103,7 @@ func toCKeySet(keySet KeySet) (*ckeySet, error) {
 // Append appends all Keys from `other` to this KeySet and returns the
 // new length of this KeySet or -1 if `other` is not a KeySet which was
 // created by elektra/kdb.
-func (ks *ckeySet) Append(other KeySet) int {
+func (ks *CKeySet) Append(other KeySet) int {
 	ckeySet, err := toCKeySet(other)
 
 	if err != nil {
@@ -113,7 +113,7 @@ func (ks *ckeySet) Append(other KeySet) int {
 	ret := int(C.ksAppend(ks.ptr, ckeySet.ptr))
 
 	ckeySet.loop(func(key Key) {
-		ks.rememberKey(key.(*ckey))
+		ks.rememberKey(key.(*CKey))
 	})
 
 	return ret
@@ -122,7 +122,7 @@ func (ks *ckeySet) Append(other KeySet) int {
 // AppendKey appends a Key to this KeySet and returns the new
 // length of this KeySet or -1 if the key is
 // not a Key created by elektra/kdb.
-func (ks *ckeySet) AppendKey(key Key) int {
+func (ks *CKeySet) AppendKey(key Key) int {
 	ckey, err := toCKey(key)
 
 	if err != nil {
@@ -137,14 +137,14 @@ func (ks *ckeySet) AppendKey(key Key) int {
 }
 
 // NeedSync returns true if KDB.Set() has to be called.
-func (ks *ckeySet) NeedSync() bool {
+func (ks *CKeySet) NeedSync() bool {
 	ret := C.ksNeedSync(ks.ptr)
 
 	return ret == 1
 }
 
 // Cut cuts out a new KeySet at the cutpoint key and returns it.
-func (ks *ckeySet) Cut(key Key) KeySet {
+func (ks *CKeySet) Cut(key Key) KeySet {
 	k, err := toCKey(key)
 
 	if err != nil {
@@ -161,7 +161,7 @@ func (ks *ckeySet) Cut(key Key) KeySet {
 }
 
 // Slice returns a slice containing all Keys.
-func (ks *ckeySet) Slice() []Key {
+func (ks *CKeySet) Slice() []Key {
 	var keys []Key
 
 	ks.loop(func(k Key) {
@@ -175,8 +175,8 @@ func (ks *ckeySet) Slice() []Key {
 type Iterator func(k Key)
 
 // toKey returns a cached Key that wraps the *C.struct__Key -
-// or creates a new wrapped *ckey.
-func (ks *ckeySet) toKey(k *C.struct__Key) *ckey {
+// or creates a new wrapped *CKey.
+func (ks *CKeySet) toKey(k *C.struct__Key) *CKey {
 	if k == nil {
 		return nil
 	}
@@ -188,18 +188,18 @@ func (ks *ckeySet) toKey(k *C.struct__Key) *ckey {
 	}
 }
 
-// rememberKey remembers the relationship between instances of *ckey
+// rememberKey remembers the relationship between instances of *CKey
 // and *C.struct__Key. This is important because we don't want multiple
-// instances of *ckey pointing to the same *C.struct__Key since this
+// instances of *CKey pointing to the same *C.struct__Key since this
 // causes troubles with Garbage Collection, which runs in parallel and
 // freeing of keys is not threadsafe.
-func (ks *ckeySet) rememberKey(key *ckey) {
+func (ks *CKeySet) rememberKey(key *CKey) {
 	ks.keys[key.ptr] = key
 }
 
-// forgetKey forgets about the reference *ckey <-> *C.struct__Key. Calls this
+// forgetKey forgets about the reference *CKey <-> *C.struct__Key. Calls this
 // when a key gets removed from the underlying *ckeyset.
-func (ks *ckeySet) forgetKey(k *C.struct__Key) *ckey {
+func (ks *CKeySet) forgetKey(k *C.struct__Key) *CKey {
 	if k == nil {
 		return nil
 	}
@@ -213,20 +213,20 @@ func (ks *ckeySet) forgetKey(k *C.struct__Key) *ckey {
 
 // loop provides an easy way of looping of the keyset by passing
 // an iterator function.
-func (ks *ckeySet) loop(iterator Iterator) {
+func (ks *CKeySet) loop(iterator Iterator) {
 	for cursor := C.cursor_t(0); C.ksAtCursor(ks.ptr, cursor) != nil; cursor++ {
 		key := ks.toKey(C.ksAtCursor(ks.ptr, cursor))
 		iterator(key)
 	}
 }
 
-// Loop accepts an `Iterator` that loops over every Key in the KeySet.
-func (ks *ckeySet) Each(iterator Iterator) {
+// Each accepts an `Iterator` that loops over every Key in the KeySet.
+func (ks *CKeySet) Each(iterator Iterator) {
 	ks.loop(iterator)
 }
 
 // KeyNames returns a slice of the name of every Key in the KeySet.
-func (ks *ckeySet) KeyNames() []string {
+func (ks *CKeySet) KeyNames() []string {
 	var keys []string
 
 	ks.loop(func(k Key) {
@@ -237,12 +237,12 @@ func (ks *ckeySet) KeyNames() []string {
 }
 
 // Head returns the first Element of the KeySet - or nil if the KeySet is empty.
-func (ks *ckeySet) Head() Key {
+func (ks *CKeySet) Head() Key {
 	return ks.toKey(C.ksHead(ks.ptr))
 }
 
 // Copy copies the entire KeySet to the passed KeySet.
-func (ks *ckeySet) Copy(keySet KeySet) {
+func (ks *CKeySet) Copy(keySet KeySet) {
 	cKeySet, err := toCKeySet(keySet)
 
 	if err != nil {
@@ -255,19 +255,19 @@ func (ks *ckeySet) Copy(keySet KeySet) {
 }
 
 // Tail returns the last Element of the KeySet - or nil if empty.
-func (ks *ckeySet) Tail() Key {
+func (ks *CKeySet) Tail() Key {
 	return ks.toKey(C.ksTail(ks.ptr))
 }
 
 // Pop removes and returns the last Element that was added to the KeySet.
-func (ks *ckeySet) Pop() Key {
+func (ks *CKeySet) Pop() Key {
 	key := C.ksPop(ks.ptr)
 
 	return ks.forgetKey(key)
 }
 
 // Remove removes a key from the KeySet and returns it if found.
-func (ks *ckeySet) Remove(key Key) Key {
+func (ks *CKeySet) Remove(key Key) Key {
 	ckey, err := toCKey(key)
 
 	if err != nil {
@@ -280,7 +280,7 @@ func (ks *ckeySet) Remove(key Key) Key {
 }
 
 // RemoveByName removes a key by its name from the KeySet and returns it if found.
-func (ks *ckeySet) RemoveByName(name string) Key {
+func (ks *CKeySet) RemoveByName(name string) Key {
 	n := C.CString(name)
 	defer C.free(unsafe.Pointer(n))
 
@@ -290,11 +290,11 @@ func (ks *ckeySet) RemoveByName(name string) Key {
 }
 
 // Clear removes all Keys from the KeySet.
-func (ks *ckeySet) Clear() {
+func (ks *CKeySet) Clear() {
 	root, _ := newKey("/")
 
 	ks.loop(func(k Key) {
-		ks.forgetKey(k.(*ckey).ptr)
+		ks.forgetKey(k.(*CKey).ptr)
 	})
 
 	// don't use `ksClear` because it is internal
@@ -306,7 +306,7 @@ func (ks *ckeySet) Clear() {
 }
 
 // Lookup searches the KeySet for a certain Key.
-func (ks *ckeySet) Lookup(key Key) Key {
+func (ks *CKeySet) Lookup(key Key) Key {
 	ckey, err := toCKey(key)
 
 	if err != nil {
@@ -321,7 +321,7 @@ func (ks *ckeySet) Lookup(key Key) Key {
 }
 
 // LookupByName searches the KeySet for a Key by name.
-func (ks *ckeySet) LookupByName(name string) Key {
+func (ks *CKeySet) LookupByName(name string) Key {
 	n := C.CString(name)
 	defer C.free(unsafe.Pointer(n))
 
@@ -333,7 +333,7 @@ func (ks *ckeySet) LookupByName(name string) Key {
 }
 
 // Len returns the length of the KeySet.
-func (ks *ckeySet) Len() int {
+func (ks *CKeySet) Len() int {
 	return int(C.ksGetSize(ks.ptr))
 }
 
@@ -342,7 +342,7 @@ func (ks *ckeySet) Len() int {
 	and should not be exported
 *****/
 
-func (ks *ckeySet) loopInternal(iterator Iterator) {
+func (ks *CKeySet) loopInternal(iterator Iterator) {
 	cursor := C.ksGetCursor(ks.ptr)
 	defer C.ksSetCursor(ks.ptr, cursor)
 

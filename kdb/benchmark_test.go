@@ -7,7 +7,7 @@ import (
 	. "github.com/ElektraInitiative/go-elektra/test"
 )
 
-func setupInMemoryKeySet(b *testing.B, count int) *ckeySet {
+func setupInMemoryKeySet(b *testing.B, count int) *CKeySet {
 	b.Helper()
 
 	ks := NewKeySet()
@@ -19,7 +19,7 @@ func setupInMemoryKeySet(b *testing.B, count int) *ckeySet {
 		ks.AppendKey(k)
 	}
 
-	return ks.(*ckeySet)
+	return ks.(*CKeySet)
 }
 
 func BenchmarkKeySetExternalCallbackIterator(b *testing.B) {
