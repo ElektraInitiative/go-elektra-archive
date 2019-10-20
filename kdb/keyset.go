@@ -30,8 +30,8 @@ type KeySet interface {
 
 	Cut(key Key) KeySet
 
-	Each(iterator Iterator)
-	Slice() []Key
+	ForEach(iterator Iterator)
+	ToSlice() []Key
 	KeyNames() []string
 
 	NeedSync() bool
@@ -69,7 +69,7 @@ func wrapKeySet(ks *C.struct__KeySet) *CKeySet {
 		keys: make(map[*C.struct__Key]*CKey),
 	}
 
-	keySet.loop(func(key Key) {
+	keySet.forEach(func(key Key) {
 		keySet.rememberKey(key.(*CKey))
 	})
 
@@ -112,7 +112,7 @@ func (ks *CKeySet) Append(other KeySet) int {
 
 	ret := int(C.ksAppend(ks.ptr, ckeySet.ptr))
 
-	ckeySet.loop(func(key Key) {
+	ckeySet.forEach(func(key Key) {
 		ks.rememberKey(key.(*CKey))
 	})
 
@@ -153,18 +153,18 @@ func (ks *CKeySet) Cut(key Key) KeySet {
 
 	newKs := wrapKeySet(C.ksCut(ks.ptr, k.ptr))
 
-	newKs.loop(func(key Key) {
+	newKs.forEach(func(key Key) {
 		ks.forgetKey(k.ptr)
 	})
 
 	return newKs
 }
 
-// Slice returns a slice containing all Keys.
-func (ks *CKeySet) Slice() []Key {
+// ToSlice returns a slice containing all Keys.
+func (ks *CKeySet) ToSlice() []Key {
 	var keys []Key
 
-	ks.loop(func(k Key) {
+	ks.forEach(func(k Key) {
 		keys = append(keys, k)
 	})
 
@@ -211,25 +211,37 @@ func (ks *CKeySet) forgetKey(k *C.struct__Key) *CKey {
 	return key
 }
 
-// loop provides an easy way of looping of the keyset by passing
+// forEach provides an easy way of looping of the keyset by passing
 // an iterator function.
-func (ks *CKeySet) loop(iterator Iterator) {
-	for cursor := C.cursor_t(0); C.ksAtCursor(ks.ptr, cursor) != nil; cursor++ {
+func (ks *CKeySet) forEach(iterator Iterator) {
+	cursor := C.cursor_t(0)
+
+	next := func() Key {
 		key := ks.toKey(C.ksAtCursor(ks.ptr, cursor))
+		cursor++
+
+		if key == nil {
+			return nil
+		}
+
+		return key
+	}
+
+	for key := next(); key != nil; key = next() {
 		iterator(key)
 	}
 }
 
-// Each accepts an `Iterator` that loops over every Key in the KeySet.
-func (ks *CKeySet) Each(iterator Iterator) {
-	ks.loop(iterator)
+// ForEach accepts an `Iterator` that loops over every Key in the KeySet.
+func (ks *CKeySet) ForEach(iterator Iterator) {
+	ks.forEach(iterator)
 }
 
 // KeyNames returns a slice of the name of every Key in the KeySet.
 func (ks *CKeySet) KeyNames() []string {
 	var keys []string
 
-	ks.loop(func(k Key) {
+	ks.forEach(func(k Key) {
 		keys = append(keys, k.Name())
 	})
 
@@ -293,7 +305,7 @@ func (ks *CKeySet) RemoveByName(name string) Key {
 func (ks *CKeySet) Clear() {
 	root, _ := newKey("/")
 
-	ks.loop(func(k Key) {
+	ks.forEach(func(k Key) {
 		ks.forgetKey(k.(*CKey).ptr)
 	})
 
@@ -342,7 +354,7 @@ func (ks *CKeySet) Len() int {
 	and should not be exported
 *****/
 
-func (ks *CKeySet) loopInternal(iterator Iterator) {
+func (ks *CKeySet) forEachInternal(iterator Iterator) {
 	cursor := C.ksGetCursor(ks.ptr)
 	defer C.ksSetCursor(ks.ptr, cursor)
 

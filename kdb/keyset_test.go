@@ -23,7 +23,7 @@ func TestSlice(t *testing.T) {
 
 	ks := elektra.NewKeySet(k, k2)
 
-	slice := ks.Slice()
+	slice := ks.ToSlice()
 	Assert(t, len(slice) == 2, "Slice should have length 2")
 	Assert(t, slice[0].Compare(k) == 0 && slice[1].Compare(k2) == 0, "Slice does not contain the correct keys")
 }

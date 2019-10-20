@@ -5,10 +5,9 @@ import (
 	"testing"
 
 	. "go.libelektra.org/test"
-
 )
 
-func setupInMemoryKeySet(b *testing.B, count int) *CKeySet {
+func setupTestData(b *testing.B, count int) *CKeySet {
 	b.Helper()
 
 	ks := NewKeySet()
@@ -20,38 +19,33 @@ func setupInMemoryKeySet(b *testing.B, count int) *CKeySet {
 		ks.AppendKey(k)
 	}
 
+	b.ResetTimer()
 	return ks.(*CKeySet)
 }
 
 func BenchmarkKeySetExternalCallbackIterator(b *testing.B) {
-	ks := setupInMemoryKeySet(b, 1000)
-
-	b.ResetTimer()
+	ks := setupTestData(b, 1000)
 
 	for n := 0; n < b.N; n++ {
-		ks.Each(func(k Key) {
+		ks.ForEach(func(k Key) {
 		})
 	}
 }
 
 func BenchmarkKeySetInternalCallbackIterator(b *testing.B) {
-	ks := setupInMemoryKeySet(b, 1000)
-
-	b.ResetTimer()
+	ks := setupTestData(b, 1000)
 
 	for n := 0; n < b.N; n++ {
-		ks.loopInternal(func(k Key) {
+		ks.forEachInternal(func(k Key) {
 		})
 	}
 }
 
 func BenchmarkKeySetSliceRangeIterator(b *testing.B) {
-	ks := setupInMemoryKeySet(b, 1000)
-
-	b.ResetTimer()
+	ks := setupTestData(b, 1000)
 
 	for n := 0; n < b.N; n++ {
-		ksSlice := ks.Slice()
+		ksSlice := ks.ToSlice()
 
 		for range ksSlice {
 		}
