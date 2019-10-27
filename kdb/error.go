@@ -1,6 +1,52 @@
 package kdb
 
-import "github.com/pkg/errors"
+import (
+	"fmt"
+
+	"github.com/pkg/errors"
+)
+
+type ElektraError struct {
+	Err         error
+	Description string
+	Number      string
+	Reason      string
+	Ingroup     string
+	Module      string
+	File        string
+	Line        string
+}
+
+func (e *ElektraError) Error() string {
+	return fmt.Sprintf("%s %s - %s", e.Number, e.Description, e.Reason)
+}
+
+func (e *ElektraError) Unwrap() error {
+	return e.Err
+}
+
+func errFromKey(k *CKey) error {
+	description := k.Meta("error/description")
+	number := k.Meta("error/number")
+	reason := k.Meta("error/reason")
+	ingroup := k.Meta("error/ingroup")
+	module := k.Meta("error/module")
+	file := k.Meta("error/file")
+	line := k.Meta("error/line")
+
+	err := errCodeMap[number]
+
+	return &ElektraError{
+		Err:         err,
+		Description: description,
+		Number:      number,
+		Reason:      reason,
+		Ingroup:     ingroup,
+		Module:      module,
+		File:        file,
+		Line:        line,
+	}
+}
 
 // error codes taken from libelektra/src/error/specification
 var (

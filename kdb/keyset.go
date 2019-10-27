@@ -69,7 +69,7 @@ func wrapKeySet(ks *C.struct__KeySet) *CKeySet {
 		keys: make(map[*C.struct__Key]*CKey),
 	}
 
-	keySet.forEach(func(key Key) {
+	keySet.forEach(func(key Key, _ int) {
 		keySet.rememberKey(key.(*CKey))
 	})
 
@@ -112,7 +112,7 @@ func (ks *CKeySet) Append(other KeySet) int {
 
 	ret := int(C.ksAppend(ks.ptr, ckeySet.ptr))
 
-	ckeySet.forEach(func(key Key) {
+	ckeySet.forEach(func(key Key, _ int) {
 		ks.rememberKey(key.(*CKey))
 	})
 
@@ -153,7 +153,7 @@ func (ks *CKeySet) Cut(key Key) KeySet {
 
 	newKs := wrapKeySet(C.ksCut(ks.ptr, k.ptr))
 
-	newKs.forEach(func(key Key) {
+	newKs.forEach(func(key Key, _ int) {
 		ks.forgetKey(k.ptr)
 	})
 
@@ -162,17 +162,17 @@ func (ks *CKeySet) Cut(key Key) KeySet {
 
 // ToSlice returns a slice containing all Keys.
 func (ks *CKeySet) ToSlice() []Key {
-	var keys []Key
+	var keys = make([]Key, ks.Len())
 
-	ks.forEach(func(k Key) {
-		keys = append(keys, k)
+	ks.forEach(func(k Key, i int) {
+		keys[i] = k
 	})
 
 	return keys
 }
 
 // Iterator is a function that loops over Keys.
-type Iterator func(k Key)
+type Iterator func(k Key, i int)
 
 // toKey returns a cached Key that wraps the *C.struct__Key -
 // or creates a new wrapped *CKey.
@@ -228,7 +228,7 @@ func (ks *CKeySet) forEach(iterator Iterator) {
 	}
 
 	for key := next(); key != nil; key = next() {
-		iterator(key)
+		iterator(key, int(cursor)-1)
 	}
 }
 
@@ -239,10 +239,10 @@ func (ks *CKeySet) ForEach(iterator Iterator) {
 
 // KeyNames returns a slice of the name of every Key in the KeySet.
 func (ks *CKeySet) KeyNames() []string {
-	var keys []string
+	var keys = make([]string, ks.Len())
 
-	ks.forEach(func(k Key) {
-		keys = append(keys, k.Name())
+	ks.forEach(func(k Key, i int) {
+		keys[i] = k.Name()
 	})
 
 	return keys
@@ -305,7 +305,7 @@ func (ks *CKeySet) RemoveByName(name string) Key {
 func (ks *CKeySet) Clear() {
 	root, _ := newKey("/")
 
-	ks.forEach(func(k Key) {
+	ks.forEach(func(k Key, _ int) {
 		ks.forgetKey(k.(*CKey).ptr)
 	})
 
@@ -358,8 +358,11 @@ func (ks *CKeySet) forEachInternal(iterator Iterator) {
 	cursor := C.ksGetCursor(ks.ptr)
 	defer C.ksSetCursor(ks.ptr, cursor)
 
+	i := 0
+
 	next := func() Key {
 		key := ks.toKey(C.ksNext(ks.ptr))
+		i++
 
 		if key == nil {
 			return nil
@@ -371,6 +374,6 @@ func (ks *CKeySet) forEachInternal(iterator Iterator) {
 	C.ksRewind(ks.ptr)
 
 	for key := next(); key != nil; key = next() {
-		iterator(key)
+		iterator(key, i-1)
 	}
 }

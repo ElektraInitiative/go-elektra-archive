@@ -17,12 +17,11 @@ package kdb
 import "C"
 
 import (
+	"errors"
 	"fmt"
 	"runtime"
 	"strings"
 	"unsafe"
-
-	"github.com/pkg/errors"
 )
 
 // Key is the wrapper around the Elektra Key.
@@ -55,17 +54,6 @@ type Key interface {
 
 type CKey struct {
 	ptr *C.struct__Key
-}
-
-func errFromKey(k *CKey) error {
-	description := k.Meta("error/description")
-	number := k.Meta("error/number")
-
-	if err, ok := errCodeMap[number]; ok {
-		return err
-	}
-
-	return fmt.Errorf("%s (%s)", description, number)
 }
 
 // NewKey creates a new `Key` with an optional value.

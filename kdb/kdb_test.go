@@ -1,6 +1,7 @@
 package kdb_test
 
 import (
+	"errors"
 	"testing"
 
 	elektra "go.libelektra.org/kdb"
@@ -124,7 +125,7 @@ func TestConflict(t *testing.T) {
 	ks2.AppendKey(conflictKey)
 	_, err := kdb2.Set(ks2, rootKey2)
 
-	Assertf(t, err == elektra.ErrConflictingState, "expected conflict err: %v", err)
+	Assertf(t, errors.Is(err, elektra.ErrConflictingState), "expected conflict err: %v", err)
 }
 
 func TestVersion(t *testing.T) {

@@ -27,7 +27,7 @@ func BenchmarkKeySetExternalCallbackIterator(b *testing.B) {
 	ks := setupTestData(b, 1000)
 
 	for n := 0; n < b.N; n++ {
-		ks.ForEach(func(k Key) {
+		ks.ForEach(func(k Key, i int) {
 		})
 	}
 }
@@ -36,7 +36,7 @@ func BenchmarkKeySetInternalCallbackIterator(b *testing.B) {
 	ks := setupTestData(b, 1000)
 
 	for n := 0; n < b.N; n++ {
-		ks.forEachInternal(func(k Key) {
+		ks.forEachInternal(func(k Key, i int) {
 		})
 	}
 }
