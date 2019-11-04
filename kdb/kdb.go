@@ -5,7 +5,7 @@ package kdb
 import "C"
 
 import (
-	"github.com/pkg/errors"
+	"errors"
 )
 
 // KDB (key data base) access functions

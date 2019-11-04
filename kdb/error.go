@@ -3,7 +3,7 @@ package kdb
 import (
 	"fmt"
 
-	"github.com/pkg/errors"
+	"errors"
 )
 
 type ElektraError struct {

@@ -19,7 +19,6 @@ import "C"
 import (
 	"errors"
 	"fmt"
-	"runtime"
 	"strings"
 	"unsafe"
 )
@@ -32,6 +31,8 @@ type Key interface {
 
 	String() string
 	Bytes() []byte
+
+	Close()
 
 	Meta(name string) string
 	MetaMap() map[string]string
@@ -97,20 +98,13 @@ func wrapKey(k *C.struct__Key) *CKey {
 	}
 
 	key := &CKey{ptr: k}
-	runtime.SetFinalizer(key, freeKey)
-
-	C.keyIncRef(k)
 
 	return key
 }
 
-// freeKey frees the resources of the Key.
-func freeKey(k *CKey) {
-	if k.ptr == nil {
-		return
-	}
-
-	C.keyDecRef(k.ptr)
+// Close free's the underlying key's memory. This needs to be done
+// for Keys that are created by NewKey() or Key.Duplicate().
+func (k *CKey) Close() {
 	C.keyDel(k.ptr)
 }
 
@@ -234,7 +228,7 @@ func (k *CKey) SetMeta(name, value string) error {
 	return nil
 }
 
-// DeleteMeta deletes a meta Key.
+// RemoveMeta deletes a meta Key.
 func (k *CKey) RemoveMeta(name string) error {
 	cName := C.CString(name)
 

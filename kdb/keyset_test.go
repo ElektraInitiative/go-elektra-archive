@@ -1,11 +1,110 @@
 package kdb_test
 
 import (
+	"fmt"
 	"testing"
+	"time"
 
 	elektra "go.libelektra.org/kdb"
 	. "go.libelektra.org/test"
 )
+
+func setupKeySetData(count int) {
+	kdb := elektra.New()
+
+	kdb.Open()
+	defer kdb.Close()
+
+	ks := elektra.NewKeySet()
+	defer ks.Close()
+
+	root, _ := elektra.NewKey("user/tests/go/elektra/memory")
+
+	kdb.Get(ks, root)
+
+	for n := 0; n < count; n++ {
+		k, _ := elektra.NewKey(fmt.Sprintf("user/tests/go/elektra/memory/%06d", n))
+		ks.AppendKey(k)
+	}
+
+	kdb.Set(ks, root)
+}
+
+func TestKeySetMemoryWithDelayedClose(t *testing.T) {
+	setupKeySetData(100000)
+
+	keysets := [20]struct {
+		ks     elektra.KeySet
+		handle elektra.KDB
+	}{}
+
+	for i := range keysets {
+		root, _ := elektra.NewKey("/")
+
+		kdb := elektra.New()
+
+		kdb.Open()
+
+		ks := elektra.NewKeySet()
+
+		_, err := kdb.Get(ks, root)
+
+		if err != nil {
+			t.Error(err)
+		}
+
+		fmt.Printf("Loaded %d keys\n", ks.Len())
+
+		time.Sleep(1 * time.Second)
+
+		if err != nil {
+			t.Fatalf("could not close kdb handle")
+		}
+
+		keysets[i].handle = kdb
+		keysets[i].ks = ks
+	}
+
+	for i := range keysets {
+		keysets[i].ks.Close()
+		keysets[i].handle.Close()
+	}
+
+	time.Sleep(20 * time.Second)
+}
+
+func TestKeySetMemory(t *testing.T) {
+	setupKeySetData(100000)
+
+	root, _ := elektra.NewKey("/")
+
+	for i := 0; i < 20; i++ {
+		kdb := elektra.New()
+
+		kdb.Open()
+
+		ks := elektra.NewKeySet()
+
+		_, err := kdb.Get(ks, root)
+
+		if err != nil {
+			t.Error(err)
+		}
+
+		fmt.Printf("Loaded %d keys\n", ks.Len())
+
+		time.Sleep(1 * time.Second)
+
+		err = kdb.Close()
+
+		if err != nil {
+			t.Fatalf("could not close kdb handle")
+		}
+		ks.Close()
+	}
+
+	time.Sleep(20 * time.Second)
+}
 
 func TestCreateKeySet(t *testing.T) {
 	k, err := elektra.NewKey("user/tests/go/elektra/createkeyset", "Hello World")

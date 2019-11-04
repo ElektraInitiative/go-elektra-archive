@@ -9,10 +9,9 @@ package kdb
 import "C"
 
 import (
-	"runtime"
 	"unsafe"
 
-	"github.com/pkg/errors"
+	"errors"
 )
 
 // KeySet represents a collection of Keys.
@@ -22,6 +21,7 @@ type KeySet interface {
 	AppendKey(key Key) int
 	Remove(key Key) Key
 	RemoveByName(name string) Key
+	Duplicate() KeySet
 
 	Pop() Key
 	Head() Key
@@ -29,6 +29,8 @@ type KeySet interface {
 	Len() int
 
 	Cut(key Key) KeySet
+
+	Close()
 
 	ForEach(iterator Iterator)
 	ToSlice() []Key
@@ -44,7 +46,6 @@ type KeySet interface {
 
 type CKeySet struct {
 	ptr  *C.struct__KeySet
-	keys map[*C.struct__Key]*CKey
 }
 
 // NewKeySet creates a new KeySet.
@@ -64,26 +65,15 @@ func wrapKeySet(ks *C.struct__KeySet) *CKeySet {
 		return nil
 	}
 
-	keySet := &CKeySet{
-		ptr:  ks,
-		keys: make(map[*C.struct__Key]*CKey),
-	}
-
-	keySet.forEach(func(key Key, _ int) {
-		keySet.rememberKey(key.(*CKey))
-	})
-
-	runtime.SetFinalizer(keySet, freeKeySet)
+	keySet := &CKeySet{ptr:  ks}
 
 	return keySet
 }
 
-// freeKeySet frees the keySet's memory when it
-// goes out of scope.
-func freeKeySet(k *CKeySet) {
-	if k.ptr != nil {
-		C.ksDel(k.ptr)
-	}
+// Close needs to be called on a KeySet after it is not in
+// use anymore to free the allocated memory.
+func (ks *CKeySet) Close() {
+	C.ksDel(ks.ptr)
 }
 
 func toCKeySet(keySet KeySet) (*CKeySet, error) {
@@ -112,11 +102,12 @@ func (ks *CKeySet) Append(other KeySet) int {
 
 	ret := int(C.ksAppend(ks.ptr, ckeySet.ptr))
 
-	ckeySet.forEach(func(key Key, _ int) {
-		ks.rememberKey(key.(*CKey))
-	})
-
 	return ret
+}
+
+// Duplicate returns a new duplicated keyset.
+func (ks *CKeySet) Duplicate() KeySet {
+	return wrapKeySet(C.ksDup(ks.ptr))
 }
 
 // AppendKey appends a Key to this KeySet and returns the new
@@ -128,8 +119,6 @@ func (ks *CKeySet) AppendKey(key Key) int {
 	if err != nil {
 		return -1
 	}
-
-	ks.rememberKey(ckey)
 
 	size := int(C.ksAppendKey(ks.ptr, ckey.ptr))
 
@@ -152,10 +141,6 @@ func (ks *CKeySet) Cut(key Key) KeySet {
 	}
 
 	newKs := wrapKeySet(C.ksCut(ks.ptr, k.ptr))
-
-	newKs.forEach(func(key Key, _ int) {
-		ks.forgetKey(k.ptr)
-	})
 
 	return newKs
 }
@@ -181,34 +166,7 @@ func (ks *CKeySet) toKey(k *C.struct__Key) *CKey {
 		return nil
 	}
 
-	if key := ks.keys[k]; key != nil {
-		return key
-	} else {
-		return wrapKey(k)
-	}
-}
-
-// rememberKey remembers the relationship between instances of *CKey
-// and *C.struct__Key. This is important because we don't want multiple
-// instances of *CKey pointing to the same *C.struct__Key since this
-// causes troubles with Garbage Collection, which runs in parallel and
-// freeing of keys is not threadsafe.
-func (ks *CKeySet) rememberKey(key *CKey) {
-	ks.keys[key.ptr] = key
-}
-
-// forgetKey forgets about the reference *CKey <-> *C.struct__Key. Calls this
-// when a key gets removed from the underlying *ckeyset.
-func (ks *CKeySet) forgetKey(k *C.struct__Key) *CKey {
-	if k == nil {
-		return nil
-	}
-
-	key := ks.keys[k]
-
-	delete(ks.keys, k)
-
-	return key
+	return wrapKey(k)
 }
 
 // forEach provides an easy way of looping of the keyset by passing
@@ -275,7 +233,7 @@ func (ks *CKeySet) Tail() Key {
 func (ks *CKeySet) Pop() Key {
 	key := C.ksPop(ks.ptr)
 
-	return ks.forgetKey(key)
+	return wrapKey(key)
 }
 
 // Remove removes a key from the KeySet and returns it if found.
@@ -288,7 +246,7 @@ func (ks *CKeySet) Remove(key Key) Key {
 
 	removed := C.ksLookup(ks.ptr, ckey.ptr, C.KDB_O_POP)
 
-	return ks.forgetKey(removed)
+	return wrapKey(removed)
 }
 
 // RemoveByName removes a key by its name from the KeySet and returns it if found.
@@ -298,16 +256,12 @@ func (ks *CKeySet) RemoveByName(name string) Key {
 
 	key := C.ksLookupByName(ks.ptr, n, C.KDB_O_POP)
 
-	return ks.forgetKey(key)
+	return wrapKey(key)
 }
 
 // Clear removes all Keys from the KeySet.
 func (ks *CKeySet) Clear() {
 	root, _ := newKey("/")
-
-	ks.forEach(func(k Key, _ int) {
-		ks.forgetKey(k.(*CKey).ptr)
-	})
 
 	// don't use `ksClear` because it is internal
 	// and renders the KeySet unusable
