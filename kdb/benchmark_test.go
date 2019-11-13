@@ -10,21 +10,25 @@ import (
 func setupTestData(b *testing.B, count int) *CKeySet {
 	b.Helper()
 
-	ks := NewKeySet()
+	keys := make([]Key, count)
 
 	for n := 0; n < count; n++ {
-		k, err := NewKey(fmt.Sprintf("proc/tests/go/elektra/benchmark/iterator/callback/%03d", n))
+		k, err := NewKey(fmt.Sprintf("proc/tests/go/elektra/benchmark/iterator/callback/%08d", n))
 		Checkf(b, err, "kdb.NewKey() failed: %v", err)
 
-		ks.AppendKey(k)
+		keys[n] = k
 	}
+
+	ks := NewKeySet(keys...)
 
 	b.ResetTimer()
 	return ks.(*CKeySet)
 }
 
+const dataSize = 100000
+
 func BenchmarkKeySetExternalCallbackIterator(b *testing.B) {
-	ks := setupTestData(b, 1000)
+	ks := setupTestData(b, dataSize)
 
 	for n := 0; n < b.N; n++ {
 		ks.ForEach(func(k Key, i int) {
@@ -33,7 +37,7 @@ func BenchmarkKeySetExternalCallbackIterator(b *testing.B) {
 }
 
 func BenchmarkKeySetInternalCallbackIterator(b *testing.B) {
-	ks := setupTestData(b, 1000)
+	ks := setupTestData(b, dataSize)
 
 	for n := 0; n < b.N; n++ {
 		ks.forEachInternal(func(k Key, i int) {
@@ -42,10 +46,22 @@ func BenchmarkKeySetInternalCallbackIterator(b *testing.B) {
 }
 
 func BenchmarkKeySetSliceRangeIterator(b *testing.B) {
-	ks := setupTestData(b, 1000)
+	ks := setupTestData(b, dataSize)
 
 	for n := 0; n < b.N; n++ {
 		ksSlice := ks.ToSlice()
+
+		for range ksSlice {
+		}
+	}
+}
+
+func BenchmarkKeySetSlowerSliceRangeIterator(b *testing.B) {
+	ks := setupTestData(b, dataSize)
+	defer ks.Close()
+
+	for n := 0; n < b.N; n++ {
+		ksSlice := ks.toSliceWithoutInitialization()
 
 		for range ksSlice {
 		}

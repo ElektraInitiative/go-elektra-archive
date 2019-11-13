@@ -308,6 +308,16 @@ func (ks *CKeySet) Len() int {
 	and should not be exported
 *****/
 
+func (ks *CKeySet) toSliceWithoutInitialization() []Key {
+	var keys = []Key{}
+
+	ks.forEach(func(k Key, i int) {
+		keys = append(keys, k)
+	})
+
+	return keys
+}
+
 func (ks *CKeySet) forEachInternal(iterator Iterator) {
 	cursor := C.ksGetCursor(ks.ptr)
 	defer C.ksSetCursor(ks.ptr, cursor)

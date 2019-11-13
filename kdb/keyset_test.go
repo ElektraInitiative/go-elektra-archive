@@ -68,6 +68,9 @@ func TestKeySetMemoryWithDelayedClose(t *testing.T) {
 	for i := range keysets {
 		keysets[i].ks.Close()
 		keysets[i].handle.Close()
+
+		keysets[i].ks = nil
+		keysets[i].handle = nil
 	}
 
 	time.Sleep(20 * time.Second)
