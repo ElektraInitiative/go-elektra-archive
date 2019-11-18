@@ -8,7 +8,7 @@ of the Elektra library.
 
 ## Prerequisites
 
-* Go (version >1.11) and
+* Go (version >1.13) and
 * libelektra installed must be available.
 
 ## Build
@@ -37,10 +37,16 @@ Execute tests of a package, e.g. kdb:
 
 The [benchmarks](./kdb/benchmark_test.go) contains several benchmarks, every function that starts with `Benchmark` is a separate benchmark, e.g. `BenchmarkKeySetInternalCallbackIterator`.
 
-To run a benchmark run the following command from the root folder of this package:
+To run the benchmarks enter the following command from the root folder of this package:
 
 ```sh
-go test -benchmem -gcflags=-N -run="^\$" ./kdb -bench "^(BenchmarkKeySetSliceRangeIterator)\$"
+go test ./kdb -bench=.
+```
+
+It is also possible to filter certain benchmarks
+
+```sh
+go test ./kdb -bench="^(BenchmarkKeySetSliceRangeIterator)\$"
 ```
 
 ## Use Elektra
@@ -73,6 +79,8 @@ import (
 
 func main() {
 	ks := kdb.NewKeySet()
+	defer ks.Close()
+	
 	keyName := "/go/elektra"
 
 	handle := kdb.New()
@@ -82,6 +90,8 @@ func main() {
 	defer handle.Close()
 
 	parentKey, _ := kdb.NewKey("user")
+	defer parentKey.Close()
+
 	_, _ = handle.Get(ks, parentKey)
 
 	foundKey := ks.LookupByName(keyName)
@@ -128,5 +138,5 @@ It appears that go currently does not support whitespaces in package-config
 
 ### Cannot find package "go.libelektra.org/kdb" 
 
-Make sure your version of Go is > `1.11` and either set the ENV variable `GO111MODULE=on` or run `go mod init`
+Make sure your version of Go is > `1.13` and either set the ENV variable `GO111MODULE=on` or run `go mod init`
 in the folder containing your go code.

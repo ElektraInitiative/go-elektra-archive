@@ -37,7 +37,7 @@ func (e *KdbC) Open() error {
 		return err
 	}
 
-	handle := C.kdbOpen(key.ptr)
+	handle := C.kdbOpen(key.Ptr)
 
 	if handle == nil {
 		return errFromKey(key)
@@ -56,7 +56,7 @@ func (e *KdbC) Close() error {
 		return err
 	}
 
-	ret := C.kdbClose(e.handle, key.ptr)
+	ret := C.kdbClose(e.handle, key.Ptr)
 
 	if ret < 0 {
 		return errors.New("could not close kdb handle")
@@ -81,7 +81,7 @@ func (e *KdbC) Get(keySet KeySet, parentKey Key) (bool, error) {
 		return false, err
 	}
 
-	changed := C.kdbGet(e.handle, cKeySet.ptr, cKey.ptr)
+	changed := C.kdbGet(e.handle, cKeySet.Ptr, cKey.Ptr)
 
 	if changed == -1 {
 		return false, errFromKey(cKey)
@@ -106,7 +106,7 @@ func (e *KdbC) Set(keySet KeySet, parentKey Key) (bool, error) {
 		return false, err
 	}
 
-	changed := C.kdbSet(e.handle, cKeySet.ptr, cKey.ptr)
+	changed := C.kdbSet(e.handle, cKeySet.Ptr, cKey.Ptr)
 
 	if changed == -1 {
 		return false, errFromKey(cKey)

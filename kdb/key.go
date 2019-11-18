@@ -18,7 +18,6 @@ import "C"
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 	"unsafe"
 )
@@ -54,7 +53,7 @@ type Key interface {
 }
 
 type CKey struct {
-	ptr *C.struct__Key
+	Ptr *C.struct__Key
 }
 
 // NewKey creates a new `Key` with an optional value.
@@ -97,7 +96,7 @@ func wrapKey(k *C.struct__Key) *CKey {
 		return nil
 	}
 
-	key := &CKey{ptr: k}
+	key := &CKey{Ptr: k}
 
 	return key
 }
@@ -105,7 +104,7 @@ func wrapKey(k *C.struct__Key) *CKey {
 // Close free's the underlying key's memory. This needs to be done
 // for Keys that are created by NewKey() or Key.Duplicate().
 func (k *CKey) Close() {
-	C.keyDel(k.ptr)
+	C.keyDel(k.Ptr)
 }
 
 func toCKey(key Key) (*CKey, error) {
@@ -127,14 +126,14 @@ func toCKey(key Key) (*CKey, error) {
 // - BaseName of system/some/keyname is keyname
 // - BaseName of "user/tmp/some key" is "some key"
 func (k *CKey) BaseName() string {
-	name := C.keyBaseName(k.ptr)
+	name := C.keyBaseName(k.Ptr)
 
 	return C.GoString(name)
 }
 
 // Name returns the name of the Key.
 func (k *CKey) Name() string {
-	name := C.keyName(k.ptr)
+	name := C.keyName(k.Ptr)
 
 	return C.GoString(name)
 }
@@ -146,9 +145,7 @@ func (k *CKey) SetBytes(value []byte) error {
 
 	size := C.ulong(len(value))
 
-	ret := C.keySetBinary(k.ptr, unsafe.Pointer(v), size)
-
-	fmt.Print(ret)
+	C.keySetBinary(k.Ptr, unsafe.Pointer(v), size)
 
 	return nil
 }
@@ -158,7 +155,7 @@ func (k *CKey) SetString(value string) error {
 	v := C.CString(value)
 	defer C.free(unsafe.Pointer(v))
 
-	_ = C.keySetString(k.ptr, v)
+	_ = C.keySetString(k.Ptr, v)
 
 	return nil
 }
@@ -180,7 +177,7 @@ func (k *CKey) SetName(name string) error {
 	n := C.CString(name)
 	defer C.free(unsafe.Pointer(n))
 
-	if ret := C.keySetName(k.ptr, n); ret < 0 {
+	if ret := C.keySetName(k.Ptr, n); ret < 0 {
 		return errors.New("could not set key name")
 	}
 
@@ -189,12 +186,12 @@ func (k *CKey) SetName(name string) error {
 
 // Bytes returns the value of the Key as a byte slice.
 func (k *CKey) Bytes() []byte {
-	size := (C.ulong)(C.keyGetValueSize(k.ptr))
+	size := (C.ulong)(C.keyGetValueSize(k.Ptr))
 
 	buffer := unsafe.Pointer((*C.char)(C.malloc(size)))
 	defer C.free(buffer)
 
-	ret := C.keyGetBinary(k.ptr, buffer, C.ulong(size))
+	ret := C.keyGetBinary(k.Ptr, buffer, C.ulong(size))
 
 	if ret <= 0 {
 		return []byte{}
@@ -207,7 +204,7 @@ func (k *CKey) Bytes() []byte {
 
 // String returns the string value of the Key.
 func (k *CKey) String() string {
-	str := C.keyString(k.ptr)
+	str := C.keyString(k.Ptr)
 
 	return C.GoString(str)
 }
@@ -219,7 +216,7 @@ func (k *CKey) SetMeta(name, value string) error {
 	defer C.free(unsafe.Pointer(cName))
 	defer C.free(unsafe.Pointer(cValue))
 
-	ret := C.keySetMeta(k.ptr, cName, cValue)
+	ret := C.keySetMeta(k.Ptr, cName, cValue)
 
 	if ret < 0 {
 		return errors.New("could not set meta")
@@ -234,7 +231,7 @@ func (k *CKey) RemoveMeta(name string) error {
 
 	defer C.free(unsafe.Pointer(cName))
 
-	ret := C.keySetMeta(k.ptr, cName, nil)
+	ret := C.keySetMeta(k.Ptr, cName, nil)
 
 	if ret < 0 {
 		return errors.New("could not delete meta")
@@ -249,7 +246,7 @@ func (k *CKey) Meta(name string) string {
 
 	defer C.free(unsafe.Pointer(cName))
 
-	metaKey := wrapKey(C.keyGetMeta(k.ptr, cName))
+	metaKey := wrapKey(C.keyGetMeta(k.Ptr, cName))
 
 	if metaKey == nil {
 		return ""
@@ -260,7 +257,7 @@ func (k *CKey) Meta(name string) string {
 
 // NextMeta returns the next meta Key.
 func (k *CKey) NextMeta() Key {
-	key := wrapKey(C.keyNextMeta(k.ptr))
+	key := wrapKey(C.keyNextMeta(k.Ptr))
 
 	if key == nil {
 		return nil
@@ -272,7 +269,7 @@ func (k *CKey) NextMeta() Key {
 // MetaSlice builds a slice of all meta Keys.
 func (k *CKey) MetaSlice() []Key {
 	dup := k.Duplicate().(*CKey)
-	C.keyRewindMeta(dup.ptr)
+	C.keyRewindMeta(dup.Ptr)
 
 	var metaKeys []Key
 
@@ -286,7 +283,7 @@ func (k *CKey) MetaSlice() []Key {
 // MetaMap builds a Key/Value map of all meta Keys.
 func (k *CKey) MetaMap() map[string]string {
 	dup := k.Duplicate().(*CKey)
-	C.keyRewindMeta(dup.ptr)
+	C.keyRewindMeta(dup.Ptr)
 
 	m := make(map[string]string)
 
@@ -299,7 +296,7 @@ func (k *CKey) MetaMap() map[string]string {
 
 // Duplicate duplicates a Key.
 func (k *CKey) Duplicate() Key {
-	return wrapKey(C.keyDup(k.ptr))
+	return wrapKey(C.keyDup(k.Ptr))
 }
 
 // IsBelow checks if this key is below the `other` key.
@@ -310,7 +307,7 @@ func (k *CKey) IsBelow(other Key) bool {
 		return false
 	}
 
-	ret := C.keyIsBelow(otherKey.ptr, k.ptr)
+	ret := C.keyIsBelow(otherKey.Ptr, k.Ptr)
 
 	return ret != 0
 }
@@ -323,7 +320,7 @@ func (k *CKey) IsBelowOrSame(other Key) bool {
 		return false
 	}
 
-	ret := C.keyIsBelowOrSame(otherKey.ptr, k.ptr)
+	ret := C.keyIsBelowOrSame(otherKey.Ptr, k.Ptr)
 
 	return ret != 0
 }
@@ -336,7 +333,7 @@ func (k *CKey) IsDirectlyBelow(other Key) bool {
 		return false
 	}
 
-	ret := C.keyIsDirectlyBelow(otherKey.ptr, k.ptr)
+	ret := C.keyIsDirectlyBelow(otherKey.Ptr, k.Ptr)
 
 	return ret != 0
 }
@@ -348,7 +345,7 @@ func (k *CKey) IsDirectlyBelow(other Key) bool {
 func (k *CKey) Compare(other Key) int {
 	otherKey, _ := toCKey(other)
 
-	return int(C.keyCmp(k.ptr, otherKey.ptr))
+	return int(C.keyCmp(k.Ptr, otherKey.Ptr))
 }
 
 // Namespace returns the namespace of a Key.
