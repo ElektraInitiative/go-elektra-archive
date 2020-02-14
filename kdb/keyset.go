@@ -45,7 +45,7 @@ type KeySet interface {
 }
 
 type CKeySet struct {
-	Ptr  *C.struct__KeySet
+	Ptr *C.struct__KeySet
 }
 
 // NewKeySet creates a new KeySet.
@@ -65,7 +65,7 @@ func wrapKeySet(ks *C.struct__KeySet) *CKeySet {
 		return nil
 	}
 
-	keySet := &CKeySet{Ptr:  ks}
+	keySet := &CKeySet{Ptr: ks}
 
 	return keySet
 }
@@ -173,6 +173,10 @@ func (ks *CKeySet) toKey(k *C.struct__Key) *CKey {
 // an iterator function.
 func (ks *CKeySet) forEach(iterator Iterator) {
 	cursor := C.cursor_t(0)
+
+	if ks.Len() < 1 {
+		return
+	}
 
 	next := func() Key {
 		key := ks.toKey(C.ksAtCursor(ks.Ptr, cursor))
