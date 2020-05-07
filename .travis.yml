@@ -1,0 +1,15 @@
+dist: bionic
+
+
+language: go
+go: "1.14"
+env:
+  - GO111MODULE=on
+before_install:
+  - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys D919CE8B27A64C16656FCA9FF1532673651F9C6C
+  - cat /etc/apt/sources.list
+  - echo "deb https://ubuntu-bionic-repo.libelektra.org/ bionic main" >> /etc/apt/sources.list
+  - sudo apt-get update
+  - sudo apt-get install libelektra4 libelektra-dev
+install:
+  - go get -v ./...
