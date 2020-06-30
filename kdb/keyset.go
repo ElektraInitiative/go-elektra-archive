@@ -172,7 +172,7 @@ func (ks *CKeySet) toKey(k *C.struct__Key) *CKey {
 // forEach provides an easy way of looping of the keyset by passing
 // an iterator function.
 func (ks *CKeySet) forEach(iterator Iterator) {
-	cursor := C.cursor_t(0)
+	cursor := C.elektraCursor(0)
 
 	if ks.Len() < 1 {
 		return
