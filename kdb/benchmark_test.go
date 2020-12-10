@@ -13,7 +13,7 @@ func setupTestData(b *testing.B, count int) *CKeySet {
 	keys := make([]Key, count)
 
 	for n := 0; n < count; n++ {
-		k, err := NewKey(fmt.Sprintf("proc/tests/go/elektra/benchmark/iterator/callback/%08d", n))
+		k, err := NewKey(fmt.Sprintf("proc:/tests/go/elektra/benchmark/iterator/callback/%08d", n))
 		Checkf(b, err, "kdb.NewKey() failed: %v", err)
 
 		keys[n] = k
