@@ -37,7 +37,28 @@ func (e *KdbC) Open() error {
 		return err
 	}
 
-	handle := C.kdbOpen(key.Ptr)
+	handle := C.kdbOpen(nil, key.Ptr)
+
+	if handle == nil {
+		return errFromKey(key)
+	}
+
+	e.handle = handle
+
+	return nil
+}
+
+// Open creates a handle to the kdb library,
+// this is mandatory to Get / Set Keys.
+// This function also enforces a contract.
+func (e *KdbC) OpenWithContract(contract KeySet) error {
+	key, err := newKey("/")
+
+	if err != nil {
+		return err
+	}
+
+	handle := C.kdbOpen(contract.Ptr, key.Ptr)
 
 	if handle == nil {
 		return errFromKey(key)

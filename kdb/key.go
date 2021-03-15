@@ -19,24 +19,34 @@ import (
 	"unsafe"
 )
 
-type ElektraNamepace byte
+type ElektraNamespace byte
 
 const (
-	KEY_NS_NONE      ElektraNamepace = C.KEY_NS_NONE
-	KEY_NS_CASCADING ElektraNamepace = C.KEY_NS_CASCADING
-	KEY_NS_META      ElektraNamepace = C.KEY_NS_META
-	KEY_NS_SPEC      ElektraNamepace = C.KEY_NS_SPEC
-	KEY_NS_PROC      ElektraNamepace = C.KEY_NS_PROC
-	KEY_NS_DIR       ElektraNamepace = C.KEY_NS_DIR
-	KEY_NS_USER      ElektraNamepace = C.KEY_NS_USER
-	KEY_NS_SYSTEM    ElektraNamepace = C.KEY_NS_SYSTEM
-	KEY_NS_DEFAULT   ElektraNamepace = C.KEY_NS_DEFAULT
+	KEY_NS_NONE      ElektraNamespace = C.KEY_NS_NONE
+	KEY_NS_CASCADING ElektraNamespace = C.KEY_NS_CASCADING
+	KEY_NS_META      ElektraNamespace = C.KEY_NS_META
+	KEY_NS_SPEC      ElektraNamespace = C.KEY_NS_SPEC
+	KEY_NS_PROC      ElektraNamespace = C.KEY_NS_PROC
+	KEY_NS_DIR       ElektraNamespace = C.KEY_NS_DIR
+	KEY_NS_USER      ElektraNamespace = C.KEY_NS_USER
+	KEY_NS_SYSTEM    ElektraNamespace = C.KEY_NS_SYSTEM
+	KEY_NS_DEFAULT   ElektraNamespace = C.KEY_NS_DEFAULT
+)
+
+type KeyCopyFlags byte
+
+const (
+	KEY_CP_NAME   KeyCopyFlags = C.KEY_CP_NAME
+	KEY_CP_VALUE  KeyCopyFlags = C.KEY_CP_VALUE
+	KEY_CP_STRING KeyCopyFlags = C.KEY_CP_STRING
+	KEY_CP_META   KeyCopyFlags = C.KEY_CP_META
+	KEY_CP_ALL    KeyCopyFlags = C.KEY_CP_ALL
 )
 
 // Key is the wrapper around the Elektra Key.
 type Key interface {
 	Name() string
-	Namespace() ElektraNamepace
+	Namespace() ElektraNamespace
 	BaseName() string
 
 	String() string
@@ -55,7 +65,7 @@ type Key interface {
 	IsDirectlyBelow(key Key) bool
 	Compare(key Key) int
 
-	Duplicate() Key
+	Duplicate(flags KeyCopyFlags) Key
 
 	SetMeta(name, value string) error
 	SetName(name string) error
@@ -279,7 +289,7 @@ func (k *CKey) NextMeta() Key {
 
 // MetaSlice builds a slice of all meta Keys.
 func (k *CKey) MetaSlice() []Key {
-	dup := k.Duplicate().(*CKey)
+	dup := k.Duplicate(KEY_CP_ALL).(*CKey)
 	C.keyRewindMeta(dup.Ptr)
 
 	var metaKeys []Key
@@ -293,7 +303,7 @@ func (k *CKey) MetaSlice() []Key {
 
 // MetaMap builds a Key/Value map of all meta Keys.
 func (k *CKey) MetaMap() map[string]string {
-	dup := k.Duplicate().(*CKey)
+	dup := k.Duplicate(KEY_CP_ALL).(*CKey)
 	C.keyRewindMeta(dup.Ptr)
 
 	m := make(map[string]string)
@@ -306,8 +316,8 @@ func (k *CKey) MetaMap() map[string]string {
 }
 
 // Duplicate duplicates a Key.
-func (k *CKey) Duplicate() Key {
-	return wrapKey(C.keyDup(k.Ptr))
+func (k *CKey) Duplicate(flags KeyCopyFlags) Key {
+	return wrapKey(C.keyDup(k.Ptr, flags))
 }
 
 // IsBelow checks if this key is below the `other` key.
@@ -360,8 +370,8 @@ func (k *CKey) Compare(other Key) int {
 }
 
 // Namespace returns the namespace of a Key.
-func (k *CKey) Namespace() ElektraNamepace {
-	return ElektraNamepace(C.keyGetNamespace(k.Ptr))
+func (k *CKey) Namespace() ElektraNamespace {
+	return ElektraNamespace(C.keyGetNamespace(k.Ptr))
 }
 
 func nameWithoutNamespace(key Key) string {
