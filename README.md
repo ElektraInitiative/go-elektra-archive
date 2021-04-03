@@ -60,7 +60,7 @@ First _go get_ the package like you are used to with Go.
 Here is an example how you can use Elektra in your Go application. 
 Before you start create a key via the `kdb` command-line tool:
 
-`kdb set user/go/elektra 'Hello World!'`
+`kdb set user:/go/elektra 'Hello World!'`
 
 Save the following code to a file, e.g.: `elektra.go` and run it via
 
@@ -97,7 +97,7 @@ func main() {
 	foundKey := ks.LookupByName(keyName)
 
 	if foundKey == nil {
-		fmt.Printf("Key %q not found, please run the following command to create it:\nkdb set user/go/elektra 'Hello World!'\n", keyName)
+		fmt.Printf("Key %q not found, please run the following command to create it:\nkdb set user:/go/elektra 'Hello World!'\n", keyName)
 	} else {
 		value := foundKey.Value()
 		fmt.Printf("Value of %q is: %s\n", keyName, value)

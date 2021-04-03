@@ -11,13 +11,13 @@ import (
 )
 
 func TestName(t *testing.T) {
-	firstName := "user/tests/go/elektra/name/1"
+	firstName := "user:/tests/go/elektra/name/1"
 	k, err := elektra.NewKey(firstName)
 
 	Check(t, err, "could not create key")
 	Assert(t, k.Name() == firstName, "wrong key name")
 
-	secondName := "user/tests/go/elektra/name/2"
+	secondName := "user:/tests/go/elektra/name/2"
 	err = k.SetName(secondName)
 
 	Check(t, err, "could not set key name")
@@ -27,7 +27,7 @@ func TestName(t *testing.T) {
 func TestString(t *testing.T) {
 	testValue := "Hello World"
 
-	k, err := elektra.NewKey("user/tests/go/elektra/string", testValue)
+	k, err := elektra.NewKey("user:/tests/go/elektra/string", testValue)
 	Check(t, err, "could not create key")
 
 	val := k.String()
@@ -39,10 +39,10 @@ var bytesTests = []struct {
 	key2     string
 	expected string
 }{
-	{"user/foo/bar", "user/foo/bar2", "user/foo"},
-	{"proc/foo/bar", "user/foo/bar", "/foo/bar"},
-	{"user/foo/bar", "user/bar/foo", "user"},
-	{"proc/bar/foo", "user/foo/bar", ""},
+	{"user:/foo/bar", "user:/foo/bar2", "user:/foo"},
+	{"proc:/foo/bar", "user:/foo/bar", "/foo/bar"},
+	{"user:/foo/bar", "user:/bar/foo", "user:/"},
+	{"proc:/bar/foo", "user:/foo/bar", ""},
 }
 
 func TestBytes(t *testing.T) {
@@ -55,7 +55,7 @@ func TestBytes(t *testing.T) {
 	rand.Read(values[0])
 
 	for testcase, want := range values {
-		k, err := elektra.NewKey("user/tests/go/elektra/bytes")
+		k, err := elektra.NewKey("user:/tests/go/elektra/bytes")
 		Check(t, err, "could not create key")
 
 		err = k.SetBytes(want)
@@ -67,7 +67,7 @@ func TestBytes(t *testing.T) {
 }
 
 func TestMeta(t *testing.T) {
-	k, err := elektra.NewKey("user/tests/go/elektra/meta", "Hello World")
+	k, err := elektra.NewKey("user:/tests/go/elektra/meta", "Hello World")
 	Check(t, err, "could not create key")
 
 	err = k.SetMeta("meta", "value")
@@ -98,7 +98,7 @@ func TestMetaMap(t *testing.T) {
 		"baz": "baz",
 	}
 
-	key := keyWithMetaKeys(t, "user/tests/go/elektra/meta", keyValues)
+	key := keyWithMetaKeys(t, "user:/tests/go/elektra/meta", keyValues)
 
 	metaMap := key.MetaMap()
 
@@ -113,12 +113,12 @@ func TestMetaMap(t *testing.T) {
 
 func TestMetaSlice(t *testing.T) {
 	keyValues := map[string]string{
-		"foo": "foo",
-		"bar": "bar",
-		"baz": "baz",
+		"meta:/foo": "foo",
+		"meta:/bar": "bar",
+		"meta:/baz": "baz",
 	}
 
-	key := keyWithMetaKeys(t, "user/tests/go/elektra/meta", keyValues)
+	key := keyWithMetaKeys(t, "user:/tests/go/elektra/meta", keyValues)
 
 	metaSlice := key.MetaSlice()
 
@@ -132,15 +132,15 @@ func TestMetaSlice(t *testing.T) {
 }
 
 func TestNamespace(t *testing.T) {
-	key, _ := elektra.NewKey("user/tests/go/elektra/namespace")
+	key, _ := elektra.NewKey("user:/tests/go/elektra/namespace")
 
-	expected := "user"
+	expected := elektra.KEY_NS_USER
 	namespace := key.Namespace()
 	Assertf(t, namespace == expected, "Namespace be %q but is %q", expected, namespace)
 
 	key, _ = elektra.NewKey("/go-elektra/namespace")
 
-	expected = ""
+	expected = elektra.KEY_NS_CASCADING
 	namespace = key.Namespace()
 	Assertf(t, namespace == expected, "Namespace be %q but is %q", expected, namespace)
 }
@@ -150,10 +150,10 @@ var commonKeyNameTests = []struct {
 	key2     string
 	expected string
 }{
-	{"user/foo/bar", "user/foo/bar2", "user/foo"},
-	{"proc/foo/bar", "user/foo/bar", "/foo/bar"},
-	{"user/foo/bar", "user/bar/foo", "user"},
-	{"proc/bar/foo", "user/foo/bar", ""},
+	{"user:/foo/bar", "user:/foo/bar2", "user:/foo"},
+	{"proc:/foo/bar", "user:/foo/bar", "/foo/bar"},
+	{"user:/foo/bar", "user:/bar/foo", "user:/"},
+	{"proc:/bar/foo", "user:/foo/bar", ""},
 }
 
 func TestCommonKeyName(t *testing.T) {

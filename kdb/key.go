@@ -3,9 +3,6 @@ package kdb
 // #include <kdb.h>
 // #include <stdlib.h>
 //
-// static Key * keyNewEmptyWrapper() {
-//   return keyNew(0, KEY_END);
-// }
 //
 // static Key * keyNewWrapper(char* k) {
 //   return keyNew(k, KEY_END);
@@ -22,10 +19,24 @@ import (
 	"unsafe"
 )
 
+type ElektraNamepace byte
+
+const (
+	KEY_NS_NONE      ElektraNamepace = C.KEY_NS_NONE
+	KEY_NS_CASCADING ElektraNamepace = C.KEY_NS_CASCADING
+	KEY_NS_META      ElektraNamepace = C.KEY_NS_META
+	KEY_NS_SPEC      ElektraNamepace = C.KEY_NS_SPEC
+	KEY_NS_PROC      ElektraNamepace = C.KEY_NS_PROC
+	KEY_NS_DIR       ElektraNamepace = C.KEY_NS_DIR
+	KEY_NS_USER      ElektraNamepace = C.KEY_NS_USER
+	KEY_NS_SYSTEM    ElektraNamepace = C.KEY_NS_SYSTEM
+	KEY_NS_DEFAULT   ElektraNamepace = C.KEY_NS_DEFAULT
+)
+
 // Key is the wrapper around the Elektra Key.
 type Key interface {
 	Name() string
-	Namespace() string
+	Namespace() ElektraNamepace
 	BaseName() string
 
 	String() string
@@ -70,7 +81,7 @@ func newKey(name string, value ...interface{}) (*CKey, error) {
 	defer C.free(unsafe.Pointer(n))
 
 	if name == "" {
-		key = wrapKey(C.keyNewEmptyWrapper())
+		return nil, errors.New("unsupported key name")
 	} else if len(value) > 0 {
 		switch v := value[0].(type) {
 		case string:
@@ -85,7 +96,7 @@ func newKey(name string, value ...interface{}) (*CKey, error) {
 	}
 
 	if key == nil {
-		return nil, errors.New("could not create key")
+		return nil, errors.New("could not create key (check the key name)")
 	}
 
 	return key, nil
@@ -123,8 +134,8 @@ func toCKey(key Key) (*CKey, error) {
 
 // BaseName returns the basename of the Key.
 // Some examples:
-// - BaseName of system/some/keyname is keyname
-// - BaseName of "user/tmp/some key" is "some key"
+// - BaseName of system:/some/keyname is keyname
+// - BaseName of "user:/tmp/some key" is "some key"
 func (k *CKey) BaseName() string {
 	name := C.keyBaseName(k.Ptr)
 
@@ -288,7 +299,7 @@ func (k *CKey) MetaMap() map[string]string {
 	m := make(map[string]string)
 
 	for key := dup.NextMeta(); key != nil; key = dup.NextMeta() {
-		m[key.Name()] = key.String()
+		m[strings.TrimPrefix(key.Name(), "meta:/")] = key.String()
 	}
 
 	return m
@@ -349,15 +360,8 @@ func (k *CKey) Compare(other Key) int {
 }
 
 // Namespace returns the namespace of a Key.
-func (k *CKey) Namespace() string {
-	name := k.Name()
-	index := strings.Index(name, "/")
-
-	if index < 0 {
-		return ""
-	}
-
-	return name[:index]
+func (k *CKey) Namespace() ElektraNamepace {
+	return ElektraNamepace(C.keyGetNamespace(k.Ptr))
 }
 
 func nameWithoutNamespace(key Key) string {
@@ -383,16 +387,21 @@ func CommonKeyName(key1, key2 Key) string {
 		return key1Name
 	}
 
-	if key1.Namespace() != key2.Namespace() {
-		key1Name = nameWithoutNamespace(key1)
-		key2Name = nameWithoutNamespace(key2)
+	key1Path := nameWithoutNamespace(key1)
+	key2Path := nameWithoutNamespace(key2)
+
+	ns := "/"
+	if key1.Namespace() == key2.Namespace() {
+		ns = key1Name[:strings.Index(key1Name, "/")] + "/"
+	} else if key1Path[2] != key2Path[2] {
+		return ""
 	}
 
 	index := 0
-	k1Parts, k2Parts := strings.Split(key1Name, "/"), strings.Split(key2Name, "/")
+	k1Parts, k2Parts := strings.Split(key1Path[1:], "/"), strings.Split(key2Path[1:], "/")
 
 	for ; index < len(k1Parts) && index < len(k2Parts) && k1Parts[index] == k2Parts[index]; index++ {
 	}
 
-	return strings.Join(k1Parts[:index], "/")
+	return ns + strings.Join(k1Parts[:index], "/")
 }

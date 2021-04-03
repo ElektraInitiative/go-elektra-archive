@@ -8,7 +8,7 @@ import (
 )
 
 func TestCreateKeySet(t *testing.T) {
-	k, err := elektra.NewKey("user/tests/go/elektra/createkeyset", "Hello World")
+	k, err := elektra.NewKey("user:/tests/go/elektra/createkeyset", "Hello World")
 	Check(t, err, "could not create Key")
 
 	ks := elektra.NewKeySet(k)
@@ -16,9 +16,9 @@ func TestCreateKeySet(t *testing.T) {
 }
 
 func TestSlice(t *testing.T) {
-	k, err := elektra.NewKey("user/tests/go/elektra/addandremovefromkeyset/1", "Hello World")
+	k, err := elektra.NewKey("user:/tests/go/elektra/addandremovefromkeyset/1", "Hello World")
 	Check(t, err, "could not create Key")
-	k2, err := elektra.NewKey("user/tests/go/elektra/addandremovefromkeyset/2", "Hello World")
+	k2, err := elektra.NewKey("user:/tests/go/elektra/addandremovefromkeyset/2", "Hello World")
 	Check(t, err, "could not create Key")
 
 	ks := elektra.NewKeySet(k, k2)
@@ -29,11 +29,11 @@ func TestSlice(t *testing.T) {
 }
 
 func TestKeyNames(t *testing.T) {
-	keyName1 := "user/tests/go/elektra/addandremovefromkeyset/1"
+	keyName1 := "user:/tests/go/elektra/addandremovefromkeyset/1"
 	k, err := elektra.NewKey(keyName1, "Hello World")
 	Check(t, err, "could not create Key")
 
-	keyName2 := "user/tests/go/elektra/addandremovefromkeyset/2"
+	keyName2 := "user:/tests/go/elektra/addandremovefromkeyset/2"
 	k2, err := elektra.NewKey(keyName2, "Hello World")
 	Check(t, err, "could not create Key")
 
@@ -48,13 +48,13 @@ func TestKeyNames(t *testing.T) {
 func TestAddAndRemoveFromKeySet(t *testing.T) {
 	ks := elektra.NewKeySet()
 
-	k, err := elektra.NewKey("user/tests/go/elektra/addandremovefromkeyset/1", "Hello World")
+	k, err := elektra.NewKey("user:/tests/go/elektra/addandremovefromkeyset/1", "Hello World")
 	Check(t, err, "could not create Key")
 
 	size := ks.AppendKey(k)
 	Assert(t, size == 1, "KeySet should have len 1")
 
-	k2, err := elektra.NewKey("user/tests/go/elektra/addandremovefromkeyset//2", "Hello World")
+	k2, err := elektra.NewKey("user:/tests/go/elektra/addandremovefromkeyset//2", "Hello World")
 	Check(t, err, "could not create Key")
 
 	size = ks.AppendKey(k2)
@@ -71,11 +71,11 @@ func TestAddAndRemoveFromKeySet(t *testing.T) {
 
 func TestRemove(t *testing.T) {
 
-	k1, err := elektra.NewKey("user/tests/go/elektra/remove/1", "Hello World")
+	k1, err := elektra.NewKey("user:/tests/go/elektra/remove/1", "Hello World")
 	Check(t, err, "could not create Key")
-	k2, err := elektra.NewKey("user/tests/go/elektra/remove/2", "Hello World")
+	k2, err := elektra.NewKey("user:/tests/go/elektra/remove/2", "Hello World")
 	Check(t, err, "could not create Key")
-	k3, err := elektra.NewKey("user/tests/go/elektra/remove/3", "Hello World")
+	k3, err := elektra.NewKey("user:/tests/go/elektra/remove/3", "Hello World")
 	Check(t, err, "could not create Key")
 
 	ks := elektra.NewKeySet(k1, k2, k3)
@@ -86,20 +86,20 @@ func TestRemove(t *testing.T) {
 	Assert(t, removed != nil, "Remove failed")
 	Assert(t, ks.Len() == 2, "KeySet should have length 2")
 
-	removed = ks.RemoveByName("user/tests/go/elektra/remove/2")
+	removed = ks.RemoveByName("user:/tests/go/elektra/remove/2")
 	Assert(t, removed != nil, "RemoveByName failed")
 	Assert(t, ks.Len() == 1, "KeySet should have length 2")
 }
 
 func TestClearKeySet(t *testing.T) {
-	k, err := elektra.NewKey("user/tests/go/elektra/clearkeyset/1", "Hello World")
+	k, err := elektra.NewKey("user:/tests/go/elektra/clearkeyset/1", "Hello World")
 	Check(t, err, "could not create Key")
 
 	ks := elektra.NewKeySet(k)
 	Check(t, err, "could not create KeySet")
 	Assert(t, ks.Len() == 1, "KeySet should have len 1")
 
-	k2, err := elektra.NewKey("user/tests/go/elektra/clearkeyset/2", "Hello World")
+	k2, err := elektra.NewKey("user:/tests/go/elektra/clearkeyset/2", "Hello World")
 	Check(t, err, "could not create Key")
 	ks.AppendKey(k2)
 
@@ -109,7 +109,7 @@ func TestClearKeySet(t *testing.T) {
 }
 
 func TestLookupByName(t *testing.T) {
-	keyName := "user/tests/go/elektra/lookupbyname"
+	keyName := "user:/tests/go/elektra/lookupbyname"
 
 	k, err := elektra.NewKey(keyName, "Hello World")
 	Check(t, err, "could not create Key")

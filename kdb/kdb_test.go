@@ -26,7 +26,7 @@ func TestSet(t *testing.T) {
 	Checkf(t, err, "kdb.Open() failed: %v", err)
 
 	ks := elektra.NewKeySet()
-	key, _ := elektra.NewKey("user/tests/go/elektra/set")
+	key, _ := elektra.NewKey("user:/tests/go/elektra/set")
 	_, _ = kdb.Get(ks, key)
 
 	ks.AppendKey(key)
@@ -37,7 +37,7 @@ func TestSet(t *testing.T) {
 
 func TestRemoveKey(t *testing.T) {
 	kdb := elektra.New()
-	namespace := "user/tests/go/elektra/removekey"
+	namespace := "user:/tests/go/elektra/removekey"
 
 	parentKey, err := elektra.NewKey(namespace)
 	Check(t, err, "could not create parent Key")
@@ -102,11 +102,11 @@ func TestConflict(t *testing.T) {
 	ks1 := elektra.NewKeySet()
 	ks2 := elektra.NewKeySet()
 
-	rootKey1, _ := elektra.NewKey("user/tests/go/elektra/conflict")
-	rootKey2, _ := elektra.NewKey("user/tests/go/elektra/conflict")
-	firstKey, _ := elektra.NewKey("user/tests/go/elektra/conflict/first")
-	secondKey, _ := elektra.NewKey("user/tests/go/elektra/conflict/second")
-	conflictKey, _ := elektra.NewKey("user/tests/go/elektra/conflict/second")
+	rootKey1, _ := elektra.NewKey("user:/tests/go/elektra/conflict")
+	rootKey2, _ := elektra.NewKey("user:/tests/go/elektra/conflict")
+	firstKey, _ := elektra.NewKey("user:/tests/go/elektra/conflict/first")
+	secondKey, _ := elektra.NewKey("user:/tests/go/elektra/conflict/second")
+	conflictKey, _ := elektra.NewKey("user:/tests/go/elektra/conflict/second")
 
 	_ = kdb1.Open()
 	defer kdb1.Close()
