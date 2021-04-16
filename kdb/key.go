@@ -19,7 +19,7 @@ import (
 	"unsafe"
 )
 
-type ElektraNamespace byte
+type ElektraNamespace uint
 
 const (
 	KEY_NS_NONE      ElektraNamespace = C.KEY_NS_NONE
@@ -33,7 +33,7 @@ const (
 	KEY_NS_DEFAULT   ElektraNamespace = C.KEY_NS_DEFAULT
 )
 
-type KeyCopyFlags byte
+type KeyCopyFlags uint
 
 const (
 	KEY_CP_NAME   KeyCopyFlags = C.KEY_CP_NAME

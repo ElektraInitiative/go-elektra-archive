@@ -58,7 +58,9 @@ func (e *KdbC) OpenWithContract(contract KeySet) error {
 		return err
 	}
 
-	handle := C.kdbOpen(contract.Ptr, key.Ptr)
+	cContract, err := toCKeySet(contract)
+
+	handle := C.kdbOpen(cContract.Ptr, key.Ptr)
 
 	if handle == nil {
 		return errFromKey(key)
