@@ -317,7 +317,7 @@ func (k *CKey) MetaMap() map[string]string {
 
 // Duplicate duplicates a Key.
 func (k *CKey) Duplicate(flags KeyCopyFlags) Key {
-	return wrapKey(C.keyDup(k.Ptr, flags))
+	return wrapKey(C.keyDup(k.Ptr, C.uint(flags)))
 }
 
 // IsBelow checks if this key is below the `other` key.
