@@ -26,12 +26,13 @@ func TestSet(t *testing.T) {
 	Checkf(t, err, "kdb.Open() failed: %v", err)
 
 	ks := elektra.NewKeySet()
-	key, _ := elektra.NewKey("user:/tests/go/elektra/set")
-	_, _ = kdb.Get(ks, key)
+	parentKey, _ := elektra.NewKey("user:/tests/go/elektra/set")
+	_, _ = kdb.Get(ks, parentKey)
 
+	key, _ := elektra.NewKey("user:/tests/go/elektra/set/key")
 	ks.AppendKey(key)
 
-	_, err = kdb.Set(ks, key)
+	_, err = kdb.Set(ks, parentKey)
 	Checkf(t, err, "kdb Set failed %v", err)
 }
 
