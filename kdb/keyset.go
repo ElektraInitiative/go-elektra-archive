@@ -36,8 +36,6 @@ type KeySet interface {
 	ToSlice() []Key
 	KeyNames() []string
 
-	NeedSync() bool
-
 	Clear()
 
 	Lookup(key Key) Key
@@ -123,13 +121,6 @@ func (ks *CKeySet) AppendKey(key Key) int {
 	size := int(C.ksAppendKey(ks.Ptr, ckey.Ptr))
 
 	return size
-}
-
-// NeedSync returns true if KDB.Set() has to be called.
-func (ks *CKeySet) NeedSync() bool {
-	ret := C.ksNeedSync(ks.Ptr)
-
-	return ret == 1
 }
 
 // Cut cuts out a new KeySet at the cutpoint key and returns it.
