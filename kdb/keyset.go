@@ -24,8 +24,6 @@ type KeySet interface {
 	Duplicate() KeySet
 
 	Pop() Key
-	Head() Key
-	Tail() Key
 	Len() int
 
 	Cut(key Key) KeySet
@@ -201,11 +199,6 @@ func (ks *CKeySet) KeyNames() []string {
 	return keys
 }
 
-// Head returns the first Element of the KeySet - or nil if the KeySet is empty.
-func (ks *CKeySet) Head() Key {
-	return ks.toKey(C.ksHead(ks.Ptr))
-}
-
 // Copy copies the entire KeySet to the passed KeySet.
 func (ks *CKeySet) Copy(keySet KeySet) {
 	cKeySet, err := toCKeySet(keySet)
@@ -217,11 +210,6 @@ func (ks *CKeySet) Copy(keySet KeySet) {
 	C.ksCopy(cKeySet.Ptr, ks.Ptr)
 
 	return
-}
-
-// Tail returns the last Element of the KeySet - or nil if empty.
-func (ks *CKeySet) Tail() Key {
-	return ks.toKey(C.ksTail(ks.Ptr))
 }
 
 // Pop removes and returns the last Element that was added to the KeySet.
@@ -311,28 +299,4 @@ func (ks *CKeySet) toSliceWithoutInitialization() []Key {
 	})
 
 	return keys
-}
-
-func (ks *CKeySet) forEachInternal(iterator Iterator) {
-	cursor := C.ksGetCursor(ks.Ptr)
-	defer C.ksSetCursor(ks.Ptr, cursor)
-
-	i := 0
-
-	next := func() Key {
-		key := ks.toKey(C.ksNext(ks.Ptr))
-		i++
-
-		if key == nil {
-			return nil
-		}
-
-		return key
-	}
-
-	C.ksRewind(ks.Ptr)
-
-	for key := next(); key != nil; key = next() {
-		iterator(key, i-1)
-	}
 }

@@ -36,15 +36,6 @@ func BenchmarkKeySetExternalCallbackIterator(b *testing.B) {
 	}
 }
 
-func BenchmarkKeySetInternalCallbackIterator(b *testing.B) {
-	ks := setupTestData(b, dataSize)
-
-	for n := 0; n < b.N; n++ {
-		ks.forEachInternal(func(k Key, i int) {
-		})
-	}
-}
-
 func BenchmarkKeySetSliceRangeIterator(b *testing.B) {
 	ks := setupTestData(b, dataSize)
 

@@ -58,7 +58,6 @@ type Key interface {
 	MetaMap() map[string]string
 	RemoveMeta(name string) error
 	MetaSlice() []Key
-	NextMeta() Key
 
 	IsBelow(key Key) bool
 	IsBelowOrSame(key Key) bool
@@ -276,26 +275,12 @@ func (k *CKey) Meta(name string) string {
 	return metaKey.String()
 }
 
-// NextMeta returns the next meta Key.
-func (k *CKey) NextMeta() Key {
-	key := wrapKey(C.keyNextMeta(k.Ptr))
-
-	if key == nil {
-		return nil
-	}
-
-	return key
-}
-
 // MetaSlice builds a slice of all meta Keys.
 func (k *CKey) MetaSlice() []Key {
-	dup := k.Duplicate(KEY_CP_ALL).(*CKey)
-	C.keyRewindMeta(dup.Ptr)
-
+	metaKs := C.keyMeta(k.Ptr)
 	var metaKeys []Key
-
-	for key := dup.NextMeta(); key != nil; key = dup.NextMeta() {
-		metaKeys = append(metaKeys, key)
+	for it := C.long(0); it < C.ksGetSize(metaKs); it++ {
+		metaKeys = append(metaKeys, wrapKey(C.ksAtCursor(metaKs, it)))
 	}
 
 	return metaKeys
@@ -303,13 +288,13 @@ func (k *CKey) MetaSlice() []Key {
 
 // MetaMap builds a Key/Value map of all meta Keys.
 func (k *CKey) MetaMap() map[string]string {
-	dup := k.Duplicate(KEY_CP_ALL).(*CKey)
-	C.keyRewindMeta(dup.Ptr)
 
+	metaKs := C.keyMeta(k.Ptr)
 	m := make(map[string]string)
 
-	for key := dup.NextMeta(); key != nil; key = dup.NextMeta() {
-		m[strings.TrimPrefix(key.Name(), "meta:/")] = key.String()
+	for it := C.long(0); it < C.ksGetSize(metaKs); it++ {
+		curMeta := wrapKey(C.ksAtCursor(metaKs, it))
+		m[strings.TrimPrefix(curMeta.Name(), "meta:/")] = curMeta.String()
 	}
 
 	return m
