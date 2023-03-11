@@ -73,6 +73,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"go.libelektra.org/kdb"
 )
@@ -80,26 +81,37 @@ import (
 func main() {
 	ks := kdb.NewKeySet()
 	defer ks.Close()
-	
+
 	keyName := "/go/elektra"
 
 	handle := kdb.New()
 
 	// Open the handle, this is a separate step since there can be different implementations of the KDB interface.
-	_ = handle.Open()
+	err := handle.Open()
+	if err != nil {
+		fmt.Println("Errow while opening database")
+		os.Exit(1)
+	}
 	defer handle.Close()
 
-	parentKey, _ := kdb.NewKey("user")
+	parentKey, err := kdb.NewKey("user:/")
+	if err != nil {
+		fmt.Println("Error while creating new key", err)
+		os.Exit(1)
+	}
 	defer parentKey.Close()
 
-	_, _ = handle.Get(ks, parentKey)
+	_, err = handle.Get(ks, parentKey)
+	if err != nil {
+		fmt.Println("Error while retrieving parent key and all keys beneath")
+	}
 
 	foundKey := ks.LookupByName(keyName)
 
 	if foundKey == nil {
 		fmt.Printf("Key %q not found, please run the following command to create it:\nkdb set user:/go/elektra 'Hello World!'\n", keyName)
 	} else {
-		value := foundKey.Value()
+		value := foundKey.String()
 		fmt.Printf("Value of %q is: %s\n", keyName, value)
 	}
 }
