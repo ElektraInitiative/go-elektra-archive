@@ -89,7 +89,7 @@ func main() {
 	// Open the handle, this is a separate step since there can be different implementations of the KDB interface.
 	err := handle.Open()
 	if err != nil {
-		fmt.Println("Errow while opening database")
+		fmt.Println("Error while opening the database", err)
 		os.Exit(1)
 	}
 	defer handle.Close()
@@ -103,7 +103,7 @@ func main() {
 
 	_, err = handle.Get(ks, parentKey)
 	if err != nil {
-		fmt.Println("Error while retrieving parent key and all keys beneath")
+		fmt.Println("Error while getting parent key and all keys below", err)
 	}
 
 	foundKey := ks.LookupByName(keyName)
